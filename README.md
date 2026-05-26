@@ -20,7 +20,7 @@ An end-to-end analytics pipeline built on publicly available Texas Health and Hu
 
 ## Dashboard Preview
 
-![Texas SNAP & TANF Analytics Dashboard 2024](./Texas%20SNAP%20Analytics%20Dashboard%202024.png)
+![Texas SNAP & TANF Analytics Dashboard 2024](./Texas%20SNAP%20%26%20TANF%20Analytics%20Dashboard%202024.png)
 
 > Built with Tableau Desktop using a Live Connection to Snowflake.  
 > Shared via exported screenshots. In a production setting, this dashboard  
