@@ -1,4 +1,5 @@
-# Texas SNAP & TANF Analytics Dashboard 2024
+# SNAP Analytics Platform
+A production-inspired analytics platform for public assistance program analytics.
 
 An end-to-end analytics pipeline built on publicly available Texas Health and Human Services (HHS) data — designed to help program stakeholders quickly identify caseload trends, regional disparities, and service coverage gaps across SNAP and TANF programs.
 
