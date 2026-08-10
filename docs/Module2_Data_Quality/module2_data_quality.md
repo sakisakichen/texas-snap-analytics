@@ -185,12 +185,12 @@ Ensure the data is trustworthy for its intended business use.
 
 # Current Status
 
-  Item                   Status
-  ---------------------- -------------
-  Framework Design       ✅ Complete
-  Structure Cleaning     ⬜ Planned
-  Normalization          ⬜ Planned
-  Data Type Conversion   ⬜ Planned
-  Validation Rules       ⬜ Planned
-  Validation Report      ⬜ Planned
-  Implementation         ⬜ Planned
+| Item | Status |
+|---|---|
+| Framework Design | ✅ Complete |
+| Structure Cleaning | ⬜ Planned |
+| Normalization | ⬜ Planned |
+| Data Type Conversion | ⬜ Planned |
+| Validation Rules | ⬜ Planned |
+| Validation Report | ⬜ Planned |
+| Implementation | ⬜ Planned |
