@@ -1,0 +1,34 @@
+{
+  "input_row_count": 3084,
+  "output_row_count": 3084,
+  "status": "FAIL",
+  "rules_passed": 4,
+  "rules_failed": 1,
+  "validation_results": [
+    {
+      "rule": "County Name Required",
+      "status": "PASS",
+      "failed_rows": 0
+    },
+    {
+      "rule": "report_month Required",
+      "status": "PASS",
+      "failed_rows": 0
+    },
+    {
+      "rule": "Required Numeric Fields",
+      "status": "PASS",
+      "failed_rows": 0
+    },
+    {
+      "rule": "Non-negative Numeric Values",
+      "status": "PASS",
+      "failed_rows": 0
+    },
+    {
+      "rule": "Valid Reporting Entity",
+      "status": "FAIL",
+      "failed_rows": 2981
+    }
+  ]
+}

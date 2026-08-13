@@ -21,11 +21,12 @@ INTEGER_COLUMNS = [
     "Individuals:        Ages 18 - 59",
     "Individuals:        Ages 60 - 64",
     "Individuals:        Ages 65 +",
-    "Total SNAP Payments",
+    
 ]
 
 FLOAT_COLUMNS = [
     "Avg Payment / Case",
+    "Total SNAP Payments",
 ]
 
 
@@ -41,6 +42,7 @@ def _convert_string_columns(df: pd.DataFrame) -> pd.DataFrame:
     return converted_df
 
 
+
 def _convert_integer_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Convert configured integer columns to pandas nullable Int64 dtype."""
     converted_df = df.copy()
@@ -51,7 +53,7 @@ def _convert_integer_columns(df: pd.DataFrame) -> pd.DataFrame:
 
     # TODO: collect conversion failure statistics for reporting later.
     return converted_df
-
+    
 
 def _convert_float_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Convert configured float columns to pandas nullable Float64 dtype."""

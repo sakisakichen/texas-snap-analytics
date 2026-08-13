@@ -2,195 +2,109 @@
 
 ## Purpose
 
-Transform Bronze data into a **trustworthy Silver dataset** for
-downstream analytics.
+Transform Bronze data into a **trusted Silver dataset** that is ready
+for downstream analytics, data modeling, and reporting.
 
 ### Layer Responsibilities
 
   Layer        Responsibility
-  ------------ -------------------------------
-  **Bronze**   **Read the data**
-  **Silver**   **Trust the data**
-  **Gold**     **Answer business questions**
+  ------------ ---------------------------
+  **Bronze**   Read the data
+  **Silver**   Trust the data
+  **Gold**     Answer business questions
 
 ------------------------------------------------------------------------
 
 # Module Workflow
 
 ``` text
-Bronze Dataset
-      │
-      ▼
-Structure Cleaning
-      │
-      ▼
-Normalization
-      │
-      ▼
-Data Type Conversion
-      │
-      ▼
-Validation
-      │
-      ▼
-Validation Report
-      │
-      ▼
-Silver Dataset
-```
+Bronze Parquet
+→ Structure Cleaning
+→ Normalization
+→ Data Type Conversion
+→ Business Validation
+→ Validation Report (JSON)
+→ Validation Gate
 
-------------------------------------------------------------------------
+PASS → Write Silver Parquet
+FAIL → Raise ValidationError (Do NOT publish Silver)
+```
 
 # Stage 1 --- Structure Cleaning
 
-## Goal
-
-Ensure the dataset has the correct structure before business processing.
-
-### Typical Responsibilities
-
 -   Remove unexpected structural rows
--   Remove empty records
--   Verify required columns exist
--   Ensure record granularity is consistent
-
-> Note: Bronze is responsible for reading and profiling source files.
-> Silver begins with structural cleaning for analytics readiness.
-
-------------------------------------------------------------------------
+-   Remove empty rows
+-   Verify required columns
+-   Ensure consistent row granularity
 
 # Stage 2 --- Normalization
 
-## Goal
-
-**Ensure a consistent representation of the data.**
-
-### Generic Rules
-
--   Column Name Standardization
--   Trim Whitespace
--   Standardize Text Case
--   Remove Formatting Characters
--   Standardize Date Format
-
-### Example
-
-Before
-
-``` text
-" texas "
-```
-
-↓
-
-After
-
-``` text
-"Texas"
-```
-
-Business meaning remains unchanged.
-
-------------------------------------------------------------------------
+-   Standardize column names
+-   Trim whitespace
+-   Standardize text case
+-   Remove formatting characters
+-   Standardize date format
 
 # Stage 3 --- Data Type Conversion
 
-## Goal
+**Design Principle**
 
-Convert normalized values into the correct data types.
+Business Meaning determines Data Type.
 
-### Examples
+-   Count → Int64
+-   Monetary Amount → Float64
+-   Text → string (nullable)
 
--   String → Integer
--   String → Float
--   String → Datetime
--   String → Boolean
+# Stage 4 --- Business Validation
 
-------------------------------------------------------------------------
+Validation Rules (MVP)
 
-# Stage 4 --- Validation
+-   County Name Required
+-   report_month Required
+-   Required Numeric Fields
+-   Non-negative Numeric Values
+-   Valid Reporting Entity *(currently uses a simplified reference set)*
 
-## Goal
+# Validation Report
 
-**Ensure the data is trustworthy for its intended business use.**
+Output:
 
-## Validation Framework V1
-
-### 1. Required Fields
-
-Verify all required business fields exist.
-
-### 2. Data Type Validation
-
-Verify fields have the expected data types.
-
-### 3. Basic Range Validation
-
-Verify values fall within acceptable business ranges.
-
-------------------------------------------------------------------------
+``` text
+data/quality_reports/silver_validation_report.json
+```
 
 # Business-first Design Philosophy
 
-``` text
-Business Goal
-      │
-      ▼
-Business Questions
-      │
-      ▼
-Business Rules
-      │
-      ▼
-Validation Rules
-      │
-      ▼
+Business Goal → Business Questions → Business Rules → Validation Rules →
 Implementation
+
+# Pipeline Architecture
+
+``` text
+src/
+  ingestion/
+  transformation/
+    structure_cleaning.py
+    standardization.py
+    type_conversion.py
+  validation/
+    data_quality.py
+  pipelines/
+    silver_pipeline.py
 ```
-
-Validation rules should always originate from business requirements
-rather than arbitrary technical checks.
-
-------------------------------------------------------------------------
-
-# Key Design Principles
-
-## Bronze
-
-**Read the data.**
-
-## Silver
-
-**Trust the data.**
-
-## Gold
-
-**Answer business questions.**
-
-------------------------------------------------------------------------
-
-## Normalize
-
-Ensure a consistent representation of the data.
-
-## Convert
-
-Convert normalized values into the correct data types.
-
-## Validate
-
-Ensure the data is trustworthy for its intended business use.
-
-------------------------------------------------------------------------
 
 # Current Status
 
-| Item | Status |
-|---|---|
-| Framework Design | ✅ Complete |
-| Structure Cleaning | ⬜ Planned |
-| Normalization | ⬜ Planned |
-| Data Type Conversion | ⬜ Planned |
-| Validation Rules | ⬜ Planned |
-| Validation Report | ⬜ Planned |
-| Implementation | ⬜ Planned |
+  Item                                Status
+  ----------------------------------- -----------------------
+  Framework Design                    ✅ Complete
+  Structure Cleaning                  ✅ Complete
+  Normalization                       ✅ Complete
+  Data Type Conversion                ✅ Complete
+  Business Validation                 ✅ Complete
+  Validation Report (JSON)            ✅ Complete
+  Validation Gate                     ✅ Complete
+  Silver Pipeline                     ✅ Complete
+  Unit Tests                          ✅ Complete
+  Production Troubleshooting          ✅ Complete
+  Official County Reference Dataset   ⏳ Future Enhancement
