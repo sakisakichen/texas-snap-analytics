@@ -125,3 +125,90 @@ def test_standardize_data_does_not_mutate_input_dataframe() -> None:
     _, _ = standardize_data(df)
 
     assert df.equals(original)
+
+
+def test_standardize_timeliness_renames_expected_columns_and_preserves_business_terms() -> None:
+    df = pd.DataFrame(
+        {
+            "processing_type": ["Applications", " Redeterminations ", "Applications"],
+            "Region": [" 01 ", "02/09", " CCC "],
+            "Disposed": ["13,228", "9,000", "1,200"],
+            "Timely": ["11,202", "8,200", None],
+            "Percent": ["84.7%", "91.1%", "80.0%"],
+        }
+    )
+
+    result, _ = standardize_data(df)
+
+    assert result.columns.tolist() == [
+        "processing_type",
+        "Region",
+        "disposed_count",
+        "timely_count",
+        "source_percent",
+    ]
+    assert result["processing_type"].tolist() == ["Applications", "Redeterminations", "Applications"]
+    assert result["Region"].tolist() == ["01", "02/09", "CCC"]
+    assert result["disposed_count"].tolist() == ["13,228", "9,000", "1,200"]
+    assert result["timely_count"].iloc[0] == "11,202"
+    assert result["timely_count"].iloc[1] == "8,200"
+    assert pd.isna(result["timely_count"].iloc[2])
+    assert result["source_percent"].tolist() == ["84.7%", "91.1%", "80.0%"]
+
+
+def test_standardize_timeliness_preserves_undocumented_categories_and_missing_values() -> None:
+    df = pd.DataFrame(
+        {
+            "processing_type": ["Applications", "Redeterminations"],
+            "Region": ["MEPD", "  UNKNOWN  "],
+            "Disposed": [None, " 7 "],
+            "Timely": [None, " 5 "],
+            "Percent": [None, "71.4%"],
+        }
+    )
+
+    result, _ = standardize_data(df)
+
+    assert result["Region"].tolist() == ["MEPD", "UNKNOWN"]
+    assert result["processing_type"].tolist() == ["Applications", "Redeterminations"]
+    assert pd.isna(result["disposed_count"].iloc[0])
+    assert pd.isna(result["timely_count"].iloc[0])
+    assert pd.isna(result["source_percent"].iloc[0])
+    assert result["source_percent"].iloc[1] == "71.4%"
+
+
+def test_standardize_timeliness_does_not_convert_numeric_types_or_drop_rows() -> None:
+    df = pd.DataFrame(
+        {
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "Disposed": [" 13,228 "],
+            "Timely": [" 11,202 "],
+            "Percent": [" 84.7% "],
+        }
+    )
+
+    result, _ = standardize_data(df)
+
+    assert result["disposed_count"].tolist() == ["13,228"]
+    assert result["timely_count"].tolist() == ["11,202"]
+    assert result["source_percent"].tolist() == ["84.7%"]
+    assert result["Region"].tolist() == ["01"]
+    assert result.shape[0] == 1
+
+
+def test_standardize_timeliness_does_not_modify_input_dataframe_in_place() -> None:
+    df = pd.DataFrame(
+        {
+            "processing_type": [" Applications ", "Redeterminations"],
+            "Region": [" 01 ", " 02/09 "],
+            "Disposed": [" 100 ", " 200 "],
+            "Timely": [" 90 ", " 180 "],
+            "Percent": [" 90.0% ", " 90.0% "],
+        }
+    )
+    original = df.copy(deep=True)
+
+    _, _ = standardize_data(df)
+
+    pd.testing.assert_frame_equal(df, original)

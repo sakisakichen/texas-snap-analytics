@@ -222,3 +222,308 @@ def test_validate_data_does_not_modify_input_dataframe() -> None:
 def test_validate_data_non_dataframe_input_raises_type_error() -> None:
     with pytest.raises(TypeError):
         validate_data({"County Name": ["BEXAR"]})
+
+
+def test_timeliness_valid_dataset_passes_blocking_validation() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01", "2024-01"],
+            "processing_type": ["Applications", "Redeterminations"],
+            "Region": ["01", "02/09"],
+            "disposed_count": [100, 80],
+            "timely_count": [38, 31],
+            "source_percent": [0.38, 0.3875],
+            "source_file": ["snap_01.xlsx", "snap_02.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+
+    assert result["summary"]["status"] == "PASS"
+    assert all(item["status"] != "FAIL" for item in result["summary"]["validation_results"])
+
+
+def test_timeliness_missing_required_field_fails() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "disposed_count": [100],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Required Fields"]["status"] == "FAIL"
+    assert result["summary"]["status"] == "FAIL"
+
+
+def test_timeliness_missing_source_percent_warns_not_fail() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "disposed_count": [100],
+            "timely_count": [40],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Source Percent Warning"]["status"] == "WARNING"
+    assert result["summary"]["status"] == "PASS"
+
+
+def test_timeliness_negative_disposed_count_fails() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "disposed_count": [-1],
+            "timely_count": [0],
+            "source_percent": [0.0],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Non-negative Counts"]["status"] == "FAIL"
+    assert result["summary"]["status"] == "FAIL"
+
+
+def test_timeliness_negative_timely_count_fails() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "disposed_count": [10],
+            "timely_count": [-1],
+            "source_percent": [0.0],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Non-negative Counts"]["status"] == "FAIL"
+
+
+def test_timeliness_timely_exceeds_disposed_fails() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "disposed_count": [50],
+            "timely_count": [51],
+            "source_percent": [1.02],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Count Relationship"]["status"] == "FAIL"
+
+
+def test_timeliness_zero_disposed_with_positive_timely_fails() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "disposed_count": [0],
+            "timely_count": [1],
+            "source_percent": [0.0],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Zero Denominator Rule"]["status"] == "FAIL"
+
+
+def test_timeliness_zero_counts_are_allowed() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "disposed_count": [0],
+            "timely_count": [0],
+            "source_percent": [None],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Zero Denominator Rule"]["status"] == "PASS"
+    assert rules["Timeliness Source Percent Warning"]["status"] == "WARNING"
+
+
+def test_timeliness_duplicate_grain_fails_when_reporting_month_is_available() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01", "2024-01"],
+            "processing_type": ["Applications", "Applications"],
+            "Region": ["01", "01"],
+            "disposed_count": [100, 100],
+            "timely_count": [80, 80],
+            "source_percent": [0.8, 0.8],
+            "source_file": ["snap.xlsx", "snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Grain Uniqueness"]["status"] == "FAIL"
+
+
+def test_timeliness_unexpected_processing_type_fails() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Application"],
+            "Region": ["01"],
+            "disposed_count": [100],
+            "timely_count": [80],
+            "source_percent": [0.8],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Processing Type"]["status"] == "FAIL"
+
+
+def test_timeliness_02_09_region_is_not_blocking() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["02/09"],
+            "disposed_count": [100],
+            "timely_count": [80],
+            "source_percent": [0.8],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Region Warning"]["status"] == "PASS"
+
+
+def test_timeliness_undocumented_region_warns_but_keeps_row() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["MEPD"],
+            "disposed_count": [100],
+            "timely_count": [80],
+            "source_percent": [0.8],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Region Warning"]["status"] == "WARNING"
+    assert result["data"].iloc[0]["Region"] == "MEPD"
+
+
+def test_timeliness_source_percent_reconciliation_within_tolerance_passes() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "disposed_count": [100],
+            "timely_count": [38],
+            "source_percent": [0.38],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Source Percent Reconciliation"]["status"] == "PASS"
+
+
+def test_timeliness_source_percent_reconciliation_outside_tolerance_fails() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "disposed_count": [100],
+            "timely_count": [38],
+            "source_percent": [0.39],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    rules = {item["rule"]: item for item in result["summary"]["validation_results"]}
+
+    assert rules["Timeliness Source Percent Reconciliation"]["status"] == "FAIL"
+
+
+def test_timeliness_missing_percent_does_not_drop_row() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["MEPD"],
+            "disposed_count": [100],
+            "timely_count": [80],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+
+    result = validate_data(df)
+    assert result["data"].shape[0] == 1
+    assert result["data"].iloc[0]["Region"] == "MEPD"
+    assert result["summary"]["status"] == "PASS"
+
+
+def test_validate_data_timeliness_does_not_mutate_input_dataframe() -> None:
+    df = pd.DataFrame(
+        {
+            "reporting_month": ["2024-01"],
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "disposed_count": [100],
+            "timely_count": [80],
+            "source_percent": [0.8],
+            "source_file": ["snap.xlsx"],
+        }
+    )
+    original = df.copy(deep=True)
+
+    validate_data(df)
+
+    assert df.equals(original)

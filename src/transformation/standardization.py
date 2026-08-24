@@ -89,6 +89,29 @@ def _apply_county_name_mapping(df: pd.DataFrame) -> pd.DataFrame:
     return standardized_df
 
 
+def _standardize_timeliness_representation(df: pd.DataFrame) -> pd.DataFrame:
+    """Apply Timeliness-only representation cleanup while preserving source semantics."""
+    standardized_df = df.copy()
+
+    timeliness_columns = {"processing_type", "Region", "Disposed", "Timely", "Percent"}
+    if timeliness_columns.issubset(standardized_df.columns):
+        standardized_df = standardized_df.rename(
+            columns={
+                "Disposed": "disposed_count",
+                "Timely": "timely_count",
+                "Percent": "source_percent",
+            }
+        )
+
+        for column in ["processing_type", "Region"]:
+            if column in standardized_df.columns:
+                standardized_df[column] = standardized_df[column].map(
+                    lambda value: value.strip() if isinstance(value, str) else value
+                )
+
+    return standardized_df
+
+
 def standardize_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """Apply representation-only standardization to a Bronze DataFrame.
 
@@ -106,6 +129,7 @@ def standardize_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     working_df = _standardize_county_name_case(working_df)
     working_df = _apply_county_case_overrides(working_df)
     working_df = _apply_county_name_mapping(working_df)
+    working_df = _standardize_timeliness_representation(working_df)
 
     summary: Dict[str, Any] = {
         "input_row_count": int(df.shape[0]),

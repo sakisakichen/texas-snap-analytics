@@ -157,6 +157,72 @@ def test_summary_contains_expected_metadata() -> None:
     assert summary["conversion_failures"] == {}
 
 
+
+def test_timeliness_type_conversion_handles_counts_and_percent_values() -> None:
+    df = pd.DataFrame(
+        {
+            "processing_type": ["Applications", "Redeterminations"],
+            "Region": ["01", "02/09"],
+            "disposed_count": ["13,228", "9,000"],
+            "timely_count": ["11,202", None],
+            "source_percent": ["38.47%", 0.3847],
+            "reporting_month": ["2024-01", "2024-02"],
+            "source_file": ["snap.xls", "snap2.xls"],
+        }
+    )
+
+    result = convert_data(df)
+    converted = result["data"]
+
+    assert str(converted["processing_type"].dtype) == "string"
+    assert str(converted["Region"].dtype) == "string"
+    assert str(converted["disposed_count"].dtype) == "Int64"
+    assert str(converted["timely_count"].dtype) == "Int64"
+    assert converted["disposed_count"].tolist() == [13228, 9000]
+    assert converted["timely_count"].tolist() == [11202, pd.NA]
+    assert str(converted["source_percent"].dtype) == "Float64"
+    assert converted["source_percent"].tolist() == [0.3847, 0.3847]
+    assert str(converted["reporting_month"].dtype) == "string"
+    assert str(converted["source_file"].dtype) == "string"
+
+
+def test_timeliness_type_conversion_keeps_missing_values_nullable() -> None:
+    df = pd.DataFrame(
+        {
+            "processing_type": ["Applications"],
+            "Region": ["MEPD"],
+            "disposed_count": [None],
+            "timely_count": [None],
+            "source_percent": [None],
+        }
+    )
+
+    result = convert_data(df)
+    converted = result["data"]
+
+    assert str(converted["disposed_count"].dtype) == "Int64"
+    assert str(converted["timely_count"].dtype) == "Int64"
+    assert str(converted["source_percent"].dtype) == "Float64"
+    assert pd.isna(converted["disposed_count"].iloc[0])
+    assert pd.isna(converted["timely_count"].iloc[0])
+    assert pd.isna(converted["source_percent"].iloc[0])
+
+
+def test_timeliness_type_conversion_rejects_ambiguous_percent_values() -> None:
+    df = pd.DataFrame(
+        {
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "disposed_count": ["100"],
+            "timely_count": ["90"],
+            "source_percent": [38.47],
+        }
+    )
+
+    with pytest.raises(ValueError, match="Ambiguous percentage representation"):
+        convert_data(df)
+
+
 def test_convert_data_raises_type_error_for_non_dataframe_input() -> None:
     with pytest.raises(TypeError):
         convert_data({"County Name": ["BEXAR"]})

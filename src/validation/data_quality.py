@@ -2,9 +2,234 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List
 
 import pandas as pd
+
+VALID_TIMELINESS_PROCESSING_TYPES = {"Applications", "Redeterminations"}
+TIMELINESS_WARNING_REGIONS = {"CCC", "DATA INT", "MEPD", "PERFORMANC", "ST OFFICE", "VIC", "UNKNOWN"}
+
+
+def _is_timeliness_dataset(df: pd.DataFrame) -> bool:
+    """Detect Timeliness-style data by the expected analytical grain and field names."""
+    timeliness_columns = {"processing_type", "Region", "disposed_count", "timely_count"}
+    present = timeliness_columns.intersection(df.columns)
+    return len(present) >= 2 and ("processing_type" in df.columns or "disposed_count" in df.columns)
+
+
+def _validate_timeliness_required_fields(df: pd.DataFrame) -> Dict[str, Any]:
+    """Require Timeliness analytical fields when present in the current contract."""
+    if not _is_timeliness_dataset(df):
+        return {"rule": "Timeliness Required Fields", "status": "PASS", "failed_rows": 0}
+
+    required_columns = ["processing_type", "Region", "disposed_count", "timely_count"]
+    for column in ["reporting_month", "source_file"]:
+        if column in df.columns:
+            required_columns.append(column)
+
+    if any(column not in df.columns for column in required_columns):
+        return {"rule": "Timeliness Required Fields", "status": "FAIL", "failed_rows": len(df)}
+
+    failed_rows = int(df[required_columns].isna().any(axis=1).sum())
+    return {
+        "rule": "Timeliness Required Fields",
+        "status": "PASS" if failed_rows == 0 else "FAIL",
+        "failed_rows": failed_rows,
+    }
+
+
+def _validate_timeliness_source_percent_warning(df: pd.DataFrame) -> Dict[str, Any]:
+    """Missing source_percent should warn rather than block Timeliness Silver."""
+    if not _is_timeliness_dataset(df):
+        return {"rule": "Timeliness Source Percent Warning", "status": "PASS", "failed_rows": 0}
+
+    if "source_percent" not in df.columns:
+        return {
+            "rule": "Timeliness Source Percent Warning",
+            "status": "WARNING",
+            "failed_rows": int(df.shape[0]),
+            "message": "source_percent column missing; reconciliation metadata not yet available.",
+        }
+
+    failed_rows = int(df["source_percent"].isna().sum())
+    return {
+        "rule": "Timeliness Source Percent Warning",
+        "status": "WARNING" if failed_rows > 0 else "PASS",
+        "failed_rows": failed_rows,
+    }
+
+
+def _validate_timeliness_non_negative_counts(df: pd.DataFrame) -> Dict[str, Any]:
+    """Timeliness counts must be non-negative when present."""
+    if not _is_timeliness_dataset(df):
+        return {"rule": "Timeliness Non-negative Counts", "status": "PASS", "failed_rows": 0}
+
+    available_columns = [column for column in ["disposed_count", "timely_count"] if column in df.columns]
+    if not available_columns:
+        return {"rule": "Timeliness Non-negative Counts", "status": "PASS", "failed_rows": 0}
+
+    failed_rows = int(df[available_columns].lt(0).any(axis=1).sum())
+    return {
+        "rule": "Timeliness Non-negative Counts",
+        "status": "PASS" if failed_rows == 0 else "FAIL",
+        "failed_rows": failed_rows,
+    }
+
+
+def _validate_timeliness_timeline_limit(df: pd.DataFrame) -> Dict[str, Any]:
+    """Ensure timely_count does not exceed disposed_count when both are available."""
+    if not _is_timeliness_dataset(df):
+        return {"rule": "Timeliness Count Relationship", "status": "PASS", "failed_rows": 0}
+
+    if "disposed_count" not in df.columns or "timely_count" not in df.columns:
+        return {"rule": "Timeliness Count Relationship", "status": "PASS", "failed_rows": 0}
+
+    valid_mask = df["disposed_count"].notna() & df["timely_count"].notna()
+    failed_rows = int((df.loc[valid_mask, "timely_count"] > df.loc[valid_mask, "disposed_count"]).sum())
+    return {
+        "rule": "Timeliness Count Relationship",
+        "status": "PASS" if failed_rows == 0 else "FAIL",
+        "failed_rows": failed_rows,
+    }
+
+
+def _validate_timeliness_zero_denominator_rule(df: pd.DataFrame) -> Dict[str, Any]:
+    """A zero disposed_count row is only valid when timely_count is also zero."""
+    if not _is_timeliness_dataset(df):
+        return {"rule": "Timeliness Zero Denominator Rule", "status": "PASS", "failed_rows": 0}
+
+    if "disposed_count" not in df.columns or "timely_count" not in df.columns:
+        return {"rule": "Timeliness Zero Denominator Rule", "status": "PASS", "failed_rows": 0}
+
+    valid_mask = df["disposed_count"].notna() & df["timely_count"].notna()
+    if not valid_mask.any():
+        return {"rule": "Timeliness Zero Denominator Rule", "status": "PASS", "failed_rows": 0}
+
+    failed_mask = df.loc[valid_mask, "disposed_count"].eq(0) & df.loc[valid_mask, "timely_count"].gt(0)
+    failed_rows = int(failed_mask.sum())
+    return {
+        "rule": "Timeliness Zero Denominator Rule",
+        "status": "PASS" if failed_rows == 0 else "FAIL",
+        "failed_rows": failed_rows,
+    }
+
+
+def _validate_timeliness_processing_type(df: pd.DataFrame) -> Dict[str, Any]:
+    """Only allow the documented Timeliness processing types."""
+    if "processing_type" not in df.columns:
+        return {"rule": "Timeliness Processing Type", "status": "PASS", "failed_rows": 0}
+
+    values = df["processing_type"].astype(str).str.strip()
+    failed_rows = int((~values.isin(VALID_TIMELINESS_PROCESSING_TYPES)).sum())
+    return {
+        "rule": "Timeliness Processing Type",
+        "status": "PASS" if failed_rows == 0 else "FAIL",
+        "failed_rows": failed_rows,
+    }
+
+
+def _validate_timeliness_region_warnings(df: pd.DataFrame) -> Dict[str, Any]:
+    """Flag unresolved or undocumented region categories without deleting them from the dataset."""
+    if "Region" not in df.columns:
+        return {"rule": "Timeliness Region Warning", "status": "PASS", "failed_rows": 0}
+
+    region_values = df["Region"].dropna().astype(str).str.strip()
+    if region_values.empty:
+        return {"rule": "Timeliness Region Warning", "status": "PASS", "failed_rows": 0}
+
+    expected_region_mask = region_values.str.fullmatch(r"\d{2}(?:/\d{2})?", na=False)
+    warning_mask = region_values.isin(TIMELINESS_WARNING_REGIONS)
+    failed_rows = int(region_values[warning_mask].shape[0])
+    if failed_rows > 0:
+        return {
+            "rule": "Timeliness Region Warning",
+            "status": "WARNING",
+            "failed_rows": failed_rows,
+        }
+
+    unresolved = region_values[~expected_region_mask & ~warning_mask]
+    failed_rows = int(unresolved.shape[0])
+    return {
+        "rule": "Timeliness Region Warning",
+        "status": "WARNING" if failed_rows > 0 else "PASS",
+        "failed_rows": failed_rows,
+    }
+
+
+def _validate_timeliness_source_percent_reconciliation(df: pd.DataFrame) -> Dict[str, Any]:
+    """Check source percentage against the computed count-based rate when comparable."""
+    if not _is_timeliness_dataset(df):
+        return {"rule": "Timeliness Source Percent Reconciliation", "status": "PASS", "failed_rows": 0}
+
+    if "source_percent" not in df.columns:
+        return {
+            "rule": "Timeliness Source Percent Reconciliation",
+            "status": "WARNING",
+            "failed_rows": int(df.shape[0]),
+            "message": "source_percent missing; reconciliation deferred to later review.",
+        }
+
+    comparable_mask = (
+        df["disposed_count"].notna()
+        & df["timely_count"].notna()
+        & df["source_percent"].notna()
+        & (df["disposed_count"] > 0)
+    )
+    if not comparable_mask.any():
+        return {"rule": "Timeliness Source Percent Reconciliation", "status": "PASS", "failed_rows": 0}
+
+    computed_rates = df.loc[comparable_mask, "timely_count"] / df.loc[comparable_mask, "disposed_count"]
+    source_rates = df.loc[comparable_mask, "source_percent"]
+    tolerance = 0.00005
+    failed_rows = int((computed_rates.sub(source_rates).abs() > tolerance).sum())
+    return {
+        "rule": "Timeliness Source Percent Reconciliation",
+        "status": "PASS" if failed_rows == 0 else "FAIL",
+        "failed_rows": failed_rows,
+    }
+
+
+def _validate_timeliness_grain_uniqueness(df: pd.DataFrame) -> Dict[str, Any]:
+    """Fail if duplicate rows exist at the reporting_month × processing_type × Region grain."""
+    if not _is_timeliness_dataset(df):
+        return {"rule": "Timeliness Grain Uniqueness", "status": "PASS", "failed_rows": 0}
+
+    if "reporting_month" not in df.columns:
+        return {
+            "rule": "Timeliness Grain Uniqueness",
+            "status": "PROFILE",
+            "failed_rows": 0,
+            "message": "Full grain validation deferred until reporting_month metadata is available.",
+        }
+
+    if not {"processing_type", "Region"}.issubset(df.columns):
+        return {"rule": "Timeliness Grain Uniqueness", "status": "PROFILE", "failed_rows": 0}
+
+    duplicate_mask = df.duplicated(subset=["reporting_month", "processing_type", "Region"], keep=False)
+    failed_rows = int(duplicate_mask.sum())
+    return {
+        "rule": "Timeliness Grain Uniqueness",
+        "status": "PASS" if failed_rows == 0 else "FAIL",
+        "failed_rows": failed_rows,
+    }
+
+
+def _validate_timeliness_total_reconciliation_profile(df: pd.DataFrame) -> Dict[str, Any]:
+    """Defer TOTAL reconciliation profiling until total metadata is supplied upstream."""
+    if not _is_timeliness_dataset(df):
+        return {"rule": "Timeliness Total Reconciliation", "status": "PROFILE", "failed_rows": 0}
+
+    total_columns = [column for column in df.columns if "total" in column.lower()]
+    if not total_columns:
+        return {
+            "rule": "Timeliness Total Reconciliation",
+            "status": "PROFILE",
+            "failed_rows": 0,
+            "message": "TOTAL reconciliation deferred: column-level total metadata not available in the current Timeliness dataset.",
+        }
+
+    return {"rule": "Timeliness Total Reconciliation", "status": "PROFILE", "failed_rows": 0}
 
 
 def _validate_county_name_required(
@@ -149,16 +374,32 @@ def validate_data(df: pd.DataFrame) -> Dict[str, Any]:
 
     working_df = df.copy()
 
-    validation_results: List[Dict[str, Any]] = [
-        _validate_county_name_required(working_df),
-        _validate_report_month_required(working_df),
-        _validate_required_numeric_fields(working_df),
-        _validate_non_negative_numeric_values(working_df),
-        _validate_reporting_entity(working_df),
-    ]
+    if _is_timeliness_dataset(working_df):
+        validation_results: List[Dict[str, Any]] = [
+            _validate_timeliness_required_fields(working_df),
+            _validate_timeliness_source_percent_warning(working_df),
+            _validate_timeliness_non_negative_counts(working_df),
+            _validate_timeliness_timeline_limit(working_df),
+            _validate_timeliness_zero_denominator_rule(working_df),
+            _validate_timeliness_processing_type(working_df),
+            _validate_timeliness_region_warnings(working_df),
+            _validate_timeliness_source_percent_reconciliation(working_df),
+            _validate_timeliness_grain_uniqueness(working_df),
+            _validate_timeliness_total_reconciliation_profile(working_df),
+        ]
+    else:
+        validation_results = [
+            _validate_county_name_required(working_df),
+            _validate_report_month_required(working_df),
+            _validate_required_numeric_fields(working_df),
+            _validate_non_negative_numeric_values(working_df),
+            _validate_reporting_entity(working_df),
+        ]
 
     rules_passed = sum(1 for result in validation_results if result["status"] == "PASS")
     rules_failed = sum(1 for result in validation_results if result["status"] == "FAIL")
+    rules_warning = sum(1 for result in validation_results if result["status"] == "WARNING")
+    rules_profile = sum(1 for result in validation_results if result["status"] == "PROFILE")
     status = "PASS" if rules_failed == 0 else "FAIL"
 
     summary: Dict[str, Any] = {
@@ -167,6 +408,8 @@ def validate_data(df: pd.DataFrame) -> Dict[str, Any]:
         "status": status,
         "rules_passed": rules_passed,
         "rules_failed": rules_failed,
+        "rules_warning": rules_warning,
+        "rules_profile": rules_profile,
         "validation_results": validation_results,
     }
 

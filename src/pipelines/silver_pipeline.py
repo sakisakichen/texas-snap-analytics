@@ -15,7 +15,7 @@ from src.validation.data_quality import validate_data
 
 
 DEFAULT_BRONZE_PATH = Path("data/bronze/eligibility/snap_eligibility_2024.parquet")
-DEFAULT_SILVER_PATH = Path("data/silver/texas_snap_eligibility_2024.parquet")
+DEFAULT_SILVER_PATH = Path("data/silver/eligibility/snap_eligibility_2024.parquet")
 DEFAULT_QUALITY_REPORT_PATH = Path("data/quality_reports/silver_validation_report.json")
 
 
