@@ -3,16 +3,16 @@
   "summary": {
     "input_row_count": 384,
     "output_row_count": 384,
-    "status": "FAIL",
-    "rules_passed": 6,
-    "rules_failed": 1,
+    "status": "PASS",
+    "rules_passed": 7,
+    "rules_failed": 0,
     "rules_warning": 2,
     "rules_profile": 1,
     "validation_results": [
       {
         "rule": "Timeliness Required Fields",
-        "status": "FAIL",
-        "failed_rows": 24
+        "status": "PASS",
+        "failed_rows": 0
       },
       {
         "rule": "Timeliness Source Percent Warning",

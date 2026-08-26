@@ -22,7 +22,9 @@ COUNTY_CASE_OVERRIDES = {
 
 COUNTY_SOURCE_CORRECTIONS = {
     "Matagorda¹": "Matagorda",
+    "Matagorda1": "Matagorda",
     "State Total¹": "State Total",
+    "State Total1": "State Total",
 }
 
 COUNTY_NAME_MAPPING = COUNTY_SOURCE_CORRECTIONS

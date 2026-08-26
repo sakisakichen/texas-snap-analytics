@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from src.transformation.type_conversion import convert_data
-
+from decimal import Decimal
 
 def test_string_columns_convert_to_nullable_string_dtype() -> None:
     df = pd.DataFrame(
@@ -38,11 +38,32 @@ def test_integer_columns_convert_to_nullable_int64() -> None:
     converted = result["data"]
 
     assert str(converted["Number of Cases"].dtype) == "Int64"
-    assert str(converted["Total SNAP Payments"].dtype) == "Int64"
     assert converted["Number of Cases"].tolist() == [100, 200, pd.NA, 300]
-    assert converted["Total SNAP Payments"].tolist() == [50, 100, pd.NA, 150]
     assert pd.isna(converted["Number of Cases"].iloc[2])
 
+def test_total_snap_payments_converts_to_decimal_money() -> None:
+    df = pd.DataFrame(
+        {
+            "Total SNAP Payments": [
+                "50",
+                100.0,
+                None,
+                "150",
+                "22368395.01",
+            ]
+        }
+    )
+
+    result = convert_data(df)
+    converted = result["data"]
+
+    assert converted["Total SNAP Payments"].tolist() == [
+        Decimal("50.00"),
+        Decimal("100.00"),
+        None,
+        Decimal("150.00"),
+        Decimal("22368395.01"),
+    ]
 
 def test_invalid_integer_values_become_missing_without_raising() -> None:
     df = pd.DataFrame({"Number of Cases": ["100", "ABC", "200", None]})

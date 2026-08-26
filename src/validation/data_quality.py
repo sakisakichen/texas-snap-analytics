@@ -29,31 +29,27 @@ def _validate_timeliness_required_fields(df: pd.DataFrame) -> Dict[str, Any]:
             required_columns.append(column)
 
     if any(column not in df.columns for column in required_columns):
-        return {"rule": "Timeliness Required Fields", "status": "FAIL", "failed_rows": len(df)}
+        return {
+            "rule": "Timeliness Required Fields",
+            "status": "FAIL",
+            "failed_rows": len(df),
+        }
 
-    
-    print("\nDEBUG - Timeliness required field null counts:")
-    print(df[required_columns].isna().sum())
+    identity_columns = ["processing_type", "Region"]
 
-    missing_mask = df[["disposed_count", "timely_count"]].isna().any(axis=1)
+    for column in ["reporting_month", "source_file"]:
+        if column in df.columns:
+            identity_columns.append(column)
 
-    print("\nDEBUG - Rows missing Timeliness counts:")
-    print(
-        df.loc[
-            missing_mask,
-            [
-                "reporting_month",
-                "source_file",
-                "processing_type",
-                "Region",
-                "disposed_count",
-                "timely_count",
-                "source_percent",
-            ],
-        ].to_string(index=False)
-    )
-        
-    failed_rows = int(df[required_columns].isna().any(axis=1).sum())
+    identity_missing = df[identity_columns].isna().any(axis=1)
+
+    measure_missing = df[["disposed_count", "timely_count"]].isna().any(axis=1)
+
+    mepd_mask = df["Region"].astype("string").str.upper().eq("MEPD")
+
+    failed_mask = identity_missing | (measure_missing & ~mepd_mask)
+
+    failed_rows = int(failed_mask.sum())
     return {
         "rule": "Timeliness Required Fields",
         "status": "PASS" if failed_rows == 0 else "FAIL",

@@ -6,6 +6,7 @@ from typing import Any, Dict
 
 import pandas as pd
 
+from decimal import Decimal, InvalidOperation
 
 STRING_COLUMNS = [
     "County Name",
@@ -24,14 +25,18 @@ INTEGER_COLUMNS = [
     "Individuals:        Ages 18 - 59",
     "Individuals:        Ages 60 - 64",
     "Individuals:        Ages 65 +",
-    "Total SNAP Payments",
+
     "disposed_count",
     "timely_count",
 ]
 
+DECIMAL_COLUMNS = [
+    "Total SNAP Payments",
+]
+
 FLOAT_COLUMNS = [
     "Avg Payment / Case",
-    "source_percent",
+    "source_percent"
 ]
 
 
@@ -46,6 +51,26 @@ def _parse_count_value(value: Any) -> Any:
         return text.replace(",", "")
     return value
 
+def _parse_decimal_value(value: Any) -> Any:
+    """Convert monetary values to exact two-decimal Decimal values."""
+
+    if pd.isna(value):
+        return None
+
+    if isinstance(value, str):
+        text = value.strip()
+
+        if text == "":
+            return None
+
+        text = text.replace("$", "").replace(",", "")
+    else:
+        text = str(value)
+
+    try:
+        return Decimal(text).quantize(Decimal("0.01"))
+    except InvalidOperation as exc:
+        raise ValueError(f"Invalid monetary value: {value!r}") from exc
 
 def _parse_percent_value(value: Any) -> Any:
     """Convert a source percent value to a canonical decimal rate without guessing ambiguous inputs."""
@@ -110,6 +135,15 @@ def _convert_integer_columns(df: pd.DataFrame) -> pd.DataFrame:
     # TODO: collect conversion failure statistics for reporting later.
     return converted_df
 
+def _convert_decimal_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert configured monetary columns to exact Decimal values."""
+    converted_df = df.copy()
+
+    for column in DECIMAL_COLUMNS:
+        if column in converted_df.columns:
+            converted_df[column] = converted_df[column].map(_parse_decimal_value)
+
+    return converted_df
 
 def _convert_float_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Convert configured float columns to pandas nullable Float64 dtype."""
@@ -134,6 +168,7 @@ def convert_data(df: pd.DataFrame) -> Dict[str, Any]:
     working_df = df.copy()
     working_df = _convert_string_columns(working_df)
     working_df = _convert_integer_columns(working_df)
+    working_df = _convert_decimal_columns(working_df)
     working_df = _convert_float_columns(working_df)
 
     summary: Dict[str, Any] = {
@@ -142,6 +177,7 @@ def convert_data(df: pd.DataFrame) -> Dict[str, Any]:
         "converted_columns": {
             "string": list(STRING_COLUMNS),
             "integer": list(INTEGER_COLUMNS),
+            "decimal": list(DECIMAL_COLUMNS),
             "float": list(FLOAT_COLUMNS),
         },
         "conversion_failures": {},

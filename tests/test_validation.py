@@ -7,6 +7,7 @@ from src.validation.data_quality import (
     _validate_report_month_required,
     _validate_reporting_entity,
     _validate_required_numeric_fields,
+    _validate_timeliness_required_fields,
     validate_data,
 )
 
@@ -527,3 +528,42 @@ def test_validate_data_timeliness_does_not_mutate_input_dataframe() -> None:
     validate_data(df)
 
     assert df.equals(original)
+
+def test_timeliness_required_fields_allows_missing_measures_for_mepd_only() -> None:
+    df = pd.DataFrame(
+        {
+            "processing_type": ["Applications", "Applications"],
+            "Region": ["MEPD", "01"],
+            "disposed_count": [pd.NA, 100],
+            "timely_count": [pd.NA, 90],
+            "source_percent": [pd.NA, 0.90],
+            "reporting_month": ["2024-04", "2024-04"],
+            "source_file": [
+                "timeliness-snap-april-2024.xlsx",
+                "timeliness-snap-april-2024.xlsx",
+            ],
+        }
+    )
+
+    result = _validate_timeliness_required_fields(df)
+
+    assert result["status"] == "PASS"
+    assert result["failed_rows"] == 0
+
+def test_timeliness_required_fields_still_fails_missing_measures_for_regular_region() -> None:
+    df = pd.DataFrame(
+        {
+            "processing_type": ["Applications"],
+            "Region": ["01"],
+            "disposed_count": [pd.NA],
+            "timely_count": [pd.NA],
+            "source_percent": [pd.NA],
+            "reporting_month": ["2024-04"],
+            "source_file": ["timeliness-snap-april-2024.xlsx"],
+        }
+    )
+
+    result = _validate_timeliness_required_fields(df)
+
+    assert result["status"] == "FAIL"
+    assert result["failed_rows"] == 1

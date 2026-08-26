@@ -28,12 +28,25 @@ def test_county_case_overrides_correct_title_case_exception() -> None:
 
 
 def test_apply_county_name_mapping_corrects_source_specific_values() -> None:
-    df = pd.DataFrame({"County Name": ["Matagorda¹", "State Total¹"]})
+    df = pd.DataFrame(
+        {
+            "County Name": [
+                "Matagorda¹",
+                "Matagorda1",
+                "State Total¹",
+                "State Total1",
+            ]
+        }
+    )
 
     result = _apply_county_name_mapping(df)
 
-    assert result["County Name"].tolist() == ["Matagorda", "State Total"]
-
+    assert result["County Name"].tolist() == [
+        "Matagorda",
+        "Matagorda",
+        "State Total",
+        "State Total",
+    ]
 
 def test_trim_whitespace_removes_surrounding_whitespace() -> None:
     df = pd.DataFrame(

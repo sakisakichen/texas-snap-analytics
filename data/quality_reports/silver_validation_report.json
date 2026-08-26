@@ -1,34 +1,57 @@
 {
+  "dataset_type": "eligibility",
+  "summary": {
+    "input_row_count": 3084,
+    "output_row_count": 3084,
+    "status": "FAIL",
+    "rules_passed": 4,
+    "rules_failed": 1,
+    "rules_warning": 0,
+    "rules_profile": 0,
+    "validation_results": [
+      {
+        "rule": "County Name Required",
+        "status": "PASS",
+        "failed_rows": 0
+      },
+      {
+        "rule": "report_month Required",
+        "status": "PASS",
+        "failed_rows": 0
+      },
+      {
+        "rule": "Required Numeric Fields",
+        "status": "PASS",
+        "failed_rows": 0
+      },
+      {
+        "rule": "Non-negative Numeric Values",
+        "status": "PASS",
+        "failed_rows": 0
+      },
+      {
+        "rule": "Valid Reporting Entity",
+        "status": "FAIL",
+        "failed_rows": 2981
+      }
+    ]
+  },
+  "structure_summary": {
+    "input_row_count": 3084,
+    "output_row_count": 3084,
+    "removed_row_count": 0,
+    "removed_column_count": 0,
+    "structure_issues": []
+  },
+  "timeliness_section_totals": null,
+  "timeliness_workbooks": [],
+  "source_metadata": {
+    "bronze_path": "data/bronze/eligibility/snap_eligibility_2024.parquet",
+    "silver_path": "data/silver/eligibility/snap_eligibility_2024.parquet",
+    "report_path": "data/quality_reports/silver_validation_report.json",
+    "reporting_month": null,
+    "source_file": "snap-cases-eligable-ind-by-county-feb-2024.xls"
+  },
   "input_row_count": 3084,
-  "output_row_count": 3084,
-  "status": "FAIL",
-  "rules_passed": 4,
-  "rules_failed": 1,
-  "validation_results": [
-    {
-      "rule": "County Name Required",
-      "status": "PASS",
-      "failed_rows": 0
-    },
-    {
-      "rule": "report_month Required",
-      "status": "PASS",
-      "failed_rows": 0
-    },
-    {
-      "rule": "Required Numeric Fields",
-      "status": "PASS",
-      "failed_rows": 0
-    },
-    {
-      "rule": "Non-negative Numeric Values",
-      "status": "PASS",
-      "failed_rows": 0
-    },
-    {
-      "rule": "Valid Reporting Entity",
-      "status": "FAIL",
-      "failed_rows": 2981
-    }
-  ]
+  "output_row_count": 3084
 }
