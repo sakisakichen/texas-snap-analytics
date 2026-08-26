@@ -9,6 +9,7 @@ from typing import List
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+import sys
 
 
 def _resolve_existing_data_dir(data_dir: str | Path) -> Path:
@@ -162,15 +163,52 @@ def save_bronze_parquet(
 
 
 def main() -> None:
-    """Run the Bronze ingestion pipeline for the raw eligibility files."""
-    frames = read_source_files()
-    combined_df = combine_source_files(frames)
-    output_path = save_bronze_parquet(combined_df)
+    """Run Bronze ingestion for the selected dataset."""
 
-    print(f"Bronze ingestion complete: output={output_path}, rows={combined_df.shape[0]}, columns={combined_df.shape[1]}")
+    if len(sys.argv) != 2:
+        raise SystemExit(
+            "Usage: python -m src.ingestion.ingestion "
+            "[eligibility|timeliness]"
+        )
 
-    if not combined_df.empty and "County Name" in combined_df.columns:
-        print(combined_df["County Name"].unique())
+    dataset_type = sys.argv[1].lower()
+
+    if dataset_type not in {"eligibility", "timeliness"}:
+        raise SystemExit(
+            f"Unsupported dataset type: {dataset_type}. "
+            "Use 'eligibility' or 'timeliness'."
+        )
+
+    if dataset_type == "timeliness":
+        data_dir = "data/raw/timeliness/2024"
+        output_path = "data/bronze/timeliness/snap_timeliness_2024.parquet"
+    else:
+        data_dir = "data/raw/eligibility/2024"
+        output_path = "data/bronze/eligibility/snap_eligibility_2024.parquet"
+
+    frames = read_source_files(
+        data_dir=data_dir,
+        dataset_type=dataset_type,
+    )
+
+    combined_df = combine_source_files(
+        frames,
+        dataset_type=dataset_type,
+    )
+
+    saved_path = save_bronze_parquet(
+        combined_df,
+        output_path=output_path,
+    )
+
+    print(
+        f"Bronze ingestion complete: "
+        f"dataset={dataset_type}, "
+        f"output={saved_path}, "
+        f"rows={combined_df.shape[0]}, "
+        f"columns={combined_df.shape[1]}"
+    )
+
 
 if __name__ == "__main__":
     main()

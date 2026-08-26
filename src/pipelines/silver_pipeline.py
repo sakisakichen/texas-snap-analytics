@@ -19,7 +19,7 @@ DEFAULT_BRONZE_PATH = Path("data/bronze/eligibility/snap_eligibility_2024.parque
 DEFAULT_SILVER_PATH = Path("data/silver/eligibility/snap_eligibility_2024.parquet")
 DEFAULT_QUALITY_REPORT_PATH = Path("data/quality_reports/silver_validation_report.json")
 
-DEFAULT_TIMELINESS_BRONZE_PATH = Path("data/bronze/timeliness/timeliness_2024.parquet")
+DEFAULT_TIMELINESS_BRONZE_PATH = Path("data/bronze/timeliness/snap_timeliness_2024.parquet")
 DEFAULT_TIMELINESS_SILVER_PATH = Path("data/silver/timeliness/timeliness_2024.parquet")
 DEFAULT_TIMELINESS_QUALITY_REPORT_PATH = Path("data/quality_reports/timeliness_validation_report.json")
 

@@ -39,7 +39,12 @@ def _looks_like_timeliness_workbook(df: pd.DataFrame) -> bool:
 
 def _row_has_section_marker(row: pd.Series, section_name: str) -> bool:
     """Check whether a given row contains the given section title."""
-    return any(section_name in _normalize_text(value).upper() for value in row.tolist())
+    expected_title = f"SNAP FOOD BENEFITS {section_name}"
+
+    return any(
+        _normalize_text(value).upper() == expected_title
+        for value in row.tolist()
+    )
 
 
 def _row_has_expected_header(row: pd.Series) -> bool:
@@ -107,7 +112,7 @@ def _extract_timeliness_sections(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[s
                     "Timely": values[2] if len(values) > 2 else "",
                     "Percent": values[3] if len(values) > 3 else "",
                 }
-                continue
+                break
 
             if values[0].upper() in {"REGION"}:
                 continue
@@ -120,7 +125,8 @@ def _extract_timeliness_sections(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[s
                 continue
 
             region = values[0]
-            if not region:
+            normalized_region = region.upper().replace(" ", "")
+            if not region or normalized_region in {"(BLANK)", "UNKNOWN"}:
                 continue
 
             detail_rows.append(

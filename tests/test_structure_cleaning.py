@@ -252,6 +252,33 @@ def test_clean_structure_handles_physical_row_position_changes() -> None:
     assert cleaned_df["Region"].tolist() == ["Bexar", "Bexar"]
     assert result["summary"]["timeliness_section_totals"]["Applications"]["Disposed"] == "100"
 
+def test_timeliness_notes_with_applications_text_do_not_create_duplicate_section() -> None:
+    df = pd.DataFrame(
+        [
+            ["SNAP Food Benefits APPLICATIONS", None, None, None],
+            ["Region", "Disposed", "Timely", "Percent"],
+            ["01", "100", "90", "90.0"],
+            ["TOTAL", "100", "90", "90.0"],
+
+            ["SNAP Food Benefits REDETERMINATIONS", None, None, None],
+            ["Region", "Disposed", "Timely", "Percent"],
+            ["01", "80", "70", "87.5"],
+            ["TOTAL", "80", "70", "87.5"],
+
+            ["Notes", None, None, None],
+            ["Disposed - the number of applications worked to a decision.", None, None, None],
+            ["Timely - the number of applications disposed within the established time frames.", None, None, None],
+            ["SNAP Application Timeliness includes Expedited SNAP Applications.", None, None, None],
+        ],
+        columns=[0, 1, 2, 3],
+    )
+
+    result = clean_structure(df)
+
+    assert result["cleaned_df"]["processing_type"].tolist() == [
+        "Applications",
+        "Redeterminations",
+    ]
 
 def test_clean_structure_preserves_column_position_when_middle_value_is_missing() -> None:
     df = pd.DataFrame(
@@ -333,3 +360,33 @@ def test_clean_structure_ignores_dataframe_index_when_extracting_timeliness_sect
     assert cleaned_df["Disposed"].tolist() == ["100", "200", "80"]
     assert cleaned_df["Timely"].tolist() == ["90", "180", "70"]
     assert cleaned_df["Percent"].tolist() == ["90.0", "90.0", "87.5"]
+
+
+def test_timeliness_non_analytical_region_placeholders_are_excluded() -> None:
+    df = pd.DataFrame(
+        [
+            ["SNAP Food Benefits APPLICATIONS", None, None, None],
+            ["Region", "Disposed", "Timely", "Percent"],
+            ["( Blank )", None, None, None],
+            ["01", "100", "90", "90.0%"],
+            ["MEPD", None, None, None],
+            ["UNKNOWN", "5", "2", "40.0%"],
+            ["TOTAL", "105", "92", "87.6%"],
+
+            ["SNAP Food Benefits REDETERMINATIONS", None, None, None],
+            ["Region", "Disposed", "Timely", "Percent"],
+            ["( Blank )", None, None, None],
+            ["01", "80", "70", "87.5%"],
+            ["MEPD", None, None, None],
+            ["UNKNOWN", None, None, None],
+            ["TOTAL", "80", "70", "87.5%"],
+        ],
+        columns=[0, 1, 2, 3],
+    )
+
+    result = clean_structure(df)
+    cleaned = result["cleaned_df"]
+
+    assert "( Blank )" not in cleaned["Region"].tolist()
+    assert "UNKNOWN" not in cleaned["Region"].tolist()
+    assert "MEPD" in cleaned["Region"].tolist()

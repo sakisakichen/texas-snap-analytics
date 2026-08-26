@@ -1,0 +1,513 @@
+{
+  "dataset_type": "timeliness",
+  "summary": {
+    "input_row_count": 384,
+    "output_row_count": 384,
+    "status": "FAIL",
+    "rules_passed": 6,
+    "rules_failed": 1,
+    "rules_warning": 2,
+    "rules_profile": 1,
+    "validation_results": [
+      {
+        "rule": "Timeliness Required Fields",
+        "status": "FAIL",
+        "failed_rows": 24
+      },
+      {
+        "rule": "Timeliness Source Percent Warning",
+        "status": "WARNING",
+        "failed_rows": 25
+      },
+      {
+        "rule": "Timeliness Non-negative Counts",
+        "status": "PASS",
+        "failed_rows": 0
+      },
+      {
+        "rule": "Timeliness Count Relationship",
+        "status": "PASS",
+        "failed_rows": 0
+      },
+      {
+        "rule": "Timeliness Zero Denominator Rule",
+        "status": "PASS",
+        "failed_rows": 0
+      },
+      {
+        "rule": "Timeliness Processing Type",
+        "status": "PASS",
+        "failed_rows": 0
+      },
+      {
+        "rule": "Timeliness Region Warning",
+        "status": "WARNING",
+        "failed_rows": 144
+      },
+      {
+        "rule": "Timeliness Source Percent Reconciliation",
+        "status": "PASS",
+        "failed_rows": 0
+      },
+      {
+        "rule": "Timeliness Grain Uniqueness",
+        "status": "PASS",
+        "failed_rows": 0
+      },
+      {
+        "rule": "Timeliness Total Reconciliation",
+        "status": "PROFILE",
+        "failed_rows": 0,
+        "message": "TOTAL reconciliation deferred: column-level total metadata not available in the current Timeliness dataset."
+      }
+    ]
+  },
+  "structure_summary": {
+    "timeliness_workbooks": [
+      {
+        "source_file": "timeliness-snap-april-2024.xlsx",
+        "reporting_month": "2024-04",
+        "timeliness_section_totals": {
+          "Applications": {
+            "Region": "TOTAL",
+            "Disposed": "246563",
+            "Timely": "145177",
+            "Percent": "0.588802861743"
+          },
+          "Redeterminations": {
+            "Region": "TOTAL",
+            "Disposed": "109419",
+            "Timely": "63281",
+            "Percent": "0.57833648635"
+          }
+        }
+      },
+      {
+        "source_file": "timeliness-snap-aug-2024.xlsx",
+        "reporting_month": "2024-08",
+        "timeliness_section_totals": {
+          "Applications": {
+            "Region": "TOTAL",
+            "Disposed": "179630",
+            "Timely": "116711",
+            "Percent": "0.649730000556"
+          },
+          "Redeterminations": {
+            "Region": "TOTAL",
+            "Disposed": "109772",
+            "Timely": "70345",
+            "Percent": "0.640828262216"
+          }
+        }
+      },
+      {
+        "source_file": "timeliness-snap-dec-2024.xlsx",
+        "reporting_month": "2024-12",
+        "timeliness_section_totals": {
+          "Applications": {
+            "Region": "TOTAL",
+            "Disposed": "174357",
+            "Timely": "146716",
+            "Percent": "0.841468940162"
+          },
+          "Redeterminations": {
+            "Region": "TOTAL",
+            "Disposed": "106956",
+            "Timely": "64413",
+            "Percent": "0.602238303601"
+          }
+        }
+      },
+      {
+        "source_file": "timeliness-snap-feb-2024.xlsx",
+        "reporting_month": "2024-02",
+        "timeliness_section_totals": {
+          "Applications": {
+            "Region": "TOTAL",
+            "Disposed": "220406",
+            "Timely": "139396",
+            "Percent": "0.632451022204"
+          },
+          "Redeterminations": {
+            "Region": "TOTAL",
+            "Disposed": "115229",
+            "Timely": "69330",
+            "Percent": "0.601671454234"
+          }
+        }
+      },
+      {
+        "source_file": "timeliness-snap-jan-2024.xlsx",
+        "reporting_month": "2024-01",
+        "timeliness_section_totals": {
+          "Applications": {
+            "Region": "TOTAL",
+            "Disposed": "222177",
+            "Timely": "142078",
+            "Percent": "0.63948113441"
+          },
+          "Redeterminations": {
+            "Region": "TOTAL",
+            "Disposed": "126860",
+            "Timely": "70651",
+            "Percent": "0.556921015292"
+          }
+        }
+      },
+      {
+        "source_file": "timeliness-snap-july-2024.xlsx",
+        "reporting_month": "2024-07",
+        "timeliness_section_totals": {
+          "Applications": {
+            "Region": "TOTAL",
+            "Disposed": "226813",
+            "Timely": "152071",
+            "Percent": "0.670468623932"
+          },
+          "Redeterminations": {
+            "Region": "TOTAL",
+            "Disposed": "115163",
+            "Timely": "69319",
+            "Percent": "0.601920755798"
+          }
+        }
+      },
+      {
+        "source_file": "timeliness-snap-june-2024.xlsx",
+        "reporting_month": "2024-06",
+        "timeliness_section_totals": {
+          "Applications": {
+            "Region": "TOTAL",
+            "Disposed": "186249",
+            "Timely": "125979",
+            "Percent": "0.676400947119"
+          },
+          "Redeterminations": {
+            "Region": "TOTAL",
+            "Disposed": "116667",
+            "Timely": "77744",
+            "Percent": "0.666375238927"
+          }
+        }
+      },
+      {
+        "source_file": "timeliness-snap-march-2024.xlsx",
+        "reporting_month": "2024-03",
+        "timeliness_section_totals": {
+          "Applications": {
+            "Region": "TOTAL",
+            "Disposed": "207008",
+            "Timely": "126049",
+            "Percent": "0.608908834441"
+          },
+          "Redeterminations": {
+            "Region": "TOTAL",
+            "Disposed": "104648",
+            "Timely": "62192",
+            "Percent": "0.594297072089"
+          }
+        }
+      },
+      {
+        "source_file": "timeliness-snap-may-2024.xlsx",
+        "reporting_month": "2024-05",
+        "timeliness_section_totals": {
+          "Applications": {
+            "Region": "TOTAL",
+            "Disposed": "218196",
+            "Timely": "138559",
+            "Percent": "0.63502080698"
+          },
+          "Redeterminations": {
+            "Region": "TOTAL",
+            "Disposed": "111908",
+            "Timely": "67734",
+            "Percent": "0.605265039139"
+          }
+        }
+      },
+      {
+        "source_file": "timeliness-snap-nov-2024.xlsx",
+        "reporting_month": "2024-11",
+        "timeliness_section_totals": {
+          "Applications": {
+            "Region": "TOTAL",
+            "Disposed": "202597",
+            "Timely": "146398",
+            "Percent": "0.72260694877"
+          },
+          "Redeterminations": {
+            "Region": "TOTAL",
+            "Disposed": "99955",
+            "Timely": "78680",
+            "Percent": "0.787154219398"
+          }
+        }
+      },
+      {
+        "source_file": "timeliness-snap-oct-2024.xlsx",
+        "reporting_month": "2024-10",
+        "timeliness_section_totals": {
+          "Applications": {
+            "Region": "TOTAL",
+            "Disposed": "270621",
+            "Timely": "184348",
+            "Percent": "0.681203602085"
+          },
+          "Redeterminations": {
+            "Region": "TOTAL",
+            "Disposed": "126588",
+            "Timely": "93729",
+            "Percent": "0.740425632761"
+          }
+        }
+      },
+      {
+        "source_file": "timeliness-snap-sept-2024.xlsx",
+        "reporting_month": "2024-09",
+        "timeliness_section_totals": {
+          "Applications": {
+            "Region": "TOTAL",
+            "Disposed": "200745",
+            "Timely": "109247",
+            "Percent": "0.544207825848"
+          },
+          "Redeterminations": {
+            "Region": "TOTAL",
+            "Disposed": "102551",
+            "Timely": "70028",
+            "Percent": "0.682860235395"
+          }
+        }
+      }
+    ]
+  },
+  "timeliness_section_totals": null,
+  "timeliness_workbooks": [
+    {
+      "source_file": "timeliness-snap-april-2024.xlsx",
+      "reporting_month": "2024-04",
+      "timeliness_section_totals": {
+        "Applications": {
+          "Region": "TOTAL",
+          "Disposed": "246563",
+          "Timely": "145177",
+          "Percent": "0.588802861743"
+        },
+        "Redeterminations": {
+          "Region": "TOTAL",
+          "Disposed": "109419",
+          "Timely": "63281",
+          "Percent": "0.57833648635"
+        }
+      }
+    },
+    {
+      "source_file": "timeliness-snap-aug-2024.xlsx",
+      "reporting_month": "2024-08",
+      "timeliness_section_totals": {
+        "Applications": {
+          "Region": "TOTAL",
+          "Disposed": "179630",
+          "Timely": "116711",
+          "Percent": "0.649730000556"
+        },
+        "Redeterminations": {
+          "Region": "TOTAL",
+          "Disposed": "109772",
+          "Timely": "70345",
+          "Percent": "0.640828262216"
+        }
+      }
+    },
+    {
+      "source_file": "timeliness-snap-dec-2024.xlsx",
+      "reporting_month": "2024-12",
+      "timeliness_section_totals": {
+        "Applications": {
+          "Region": "TOTAL",
+          "Disposed": "174357",
+          "Timely": "146716",
+          "Percent": "0.841468940162"
+        },
+        "Redeterminations": {
+          "Region": "TOTAL",
+          "Disposed": "106956",
+          "Timely": "64413",
+          "Percent": "0.602238303601"
+        }
+      }
+    },
+    {
+      "source_file": "timeliness-snap-feb-2024.xlsx",
+      "reporting_month": "2024-02",
+      "timeliness_section_totals": {
+        "Applications": {
+          "Region": "TOTAL",
+          "Disposed": "220406",
+          "Timely": "139396",
+          "Percent": "0.632451022204"
+        },
+        "Redeterminations": {
+          "Region": "TOTAL",
+          "Disposed": "115229",
+          "Timely": "69330",
+          "Percent": "0.601671454234"
+        }
+      }
+    },
+    {
+      "source_file": "timeliness-snap-jan-2024.xlsx",
+      "reporting_month": "2024-01",
+      "timeliness_section_totals": {
+        "Applications": {
+          "Region": "TOTAL",
+          "Disposed": "222177",
+          "Timely": "142078",
+          "Percent": "0.63948113441"
+        },
+        "Redeterminations": {
+          "Region": "TOTAL",
+          "Disposed": "126860",
+          "Timely": "70651",
+          "Percent": "0.556921015292"
+        }
+      }
+    },
+    {
+      "source_file": "timeliness-snap-july-2024.xlsx",
+      "reporting_month": "2024-07",
+      "timeliness_section_totals": {
+        "Applications": {
+          "Region": "TOTAL",
+          "Disposed": "226813",
+          "Timely": "152071",
+          "Percent": "0.670468623932"
+        },
+        "Redeterminations": {
+          "Region": "TOTAL",
+          "Disposed": "115163",
+          "Timely": "69319",
+          "Percent": "0.601920755798"
+        }
+      }
+    },
+    {
+      "source_file": "timeliness-snap-june-2024.xlsx",
+      "reporting_month": "2024-06",
+      "timeliness_section_totals": {
+        "Applications": {
+          "Region": "TOTAL",
+          "Disposed": "186249",
+          "Timely": "125979",
+          "Percent": "0.676400947119"
+        },
+        "Redeterminations": {
+          "Region": "TOTAL",
+          "Disposed": "116667",
+          "Timely": "77744",
+          "Percent": "0.666375238927"
+        }
+      }
+    },
+    {
+      "source_file": "timeliness-snap-march-2024.xlsx",
+      "reporting_month": "2024-03",
+      "timeliness_section_totals": {
+        "Applications": {
+          "Region": "TOTAL",
+          "Disposed": "207008",
+          "Timely": "126049",
+          "Percent": "0.608908834441"
+        },
+        "Redeterminations": {
+          "Region": "TOTAL",
+          "Disposed": "104648",
+          "Timely": "62192",
+          "Percent": "0.594297072089"
+        }
+      }
+    },
+    {
+      "source_file": "timeliness-snap-may-2024.xlsx",
+      "reporting_month": "2024-05",
+      "timeliness_section_totals": {
+        "Applications": {
+          "Region": "TOTAL",
+          "Disposed": "218196",
+          "Timely": "138559",
+          "Percent": "0.63502080698"
+        },
+        "Redeterminations": {
+          "Region": "TOTAL",
+          "Disposed": "111908",
+          "Timely": "67734",
+          "Percent": "0.605265039139"
+        }
+      }
+    },
+    {
+      "source_file": "timeliness-snap-nov-2024.xlsx",
+      "reporting_month": "2024-11",
+      "timeliness_section_totals": {
+        "Applications": {
+          "Region": "TOTAL",
+          "Disposed": "202597",
+          "Timely": "146398",
+          "Percent": "0.72260694877"
+        },
+        "Redeterminations": {
+          "Region": "TOTAL",
+          "Disposed": "99955",
+          "Timely": "78680",
+          "Percent": "0.787154219398"
+        }
+      }
+    },
+    {
+      "source_file": "timeliness-snap-oct-2024.xlsx",
+      "reporting_month": "2024-10",
+      "timeliness_section_totals": {
+        "Applications": {
+          "Region": "TOTAL",
+          "Disposed": "270621",
+          "Timely": "184348",
+          "Percent": "0.681203602085"
+        },
+        "Redeterminations": {
+          "Region": "TOTAL",
+          "Disposed": "126588",
+          "Timely": "93729",
+          "Percent": "0.740425632761"
+        }
+      }
+    },
+    {
+      "source_file": "timeliness-snap-sept-2024.xlsx",
+      "reporting_month": "2024-09",
+      "timeliness_section_totals": {
+        "Applications": {
+          "Region": "TOTAL",
+          "Disposed": "200745",
+          "Timely": "109247",
+          "Percent": "0.544207825848"
+        },
+        "Redeterminations": {
+          "Region": "TOTAL",
+          "Disposed": "102551",
+          "Timely": "70028",
+          "Percent": "0.682860235395"
+        }
+      }
+    }
+  ],
+  "source_metadata": {
+    "bronze_path": "data/bronze/timeliness/snap_timeliness_2024.parquet",
+    "silver_path": "data/silver/timeliness/timeliness_2024.parquet",
+    "report_path": "data/quality_reports/timeliness_validation_report.json",
+    "reporting_month": "2024-04",
+    "source_file": "timeliness-snap-april-2024.xlsx"
+  },
+  "input_row_count": 722,
+  "output_row_count": 384
+}

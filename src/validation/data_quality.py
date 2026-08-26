@@ -31,6 +31,28 @@ def _validate_timeliness_required_fields(df: pd.DataFrame) -> Dict[str, Any]:
     if any(column not in df.columns for column in required_columns):
         return {"rule": "Timeliness Required Fields", "status": "FAIL", "failed_rows": len(df)}
 
+    
+    print("\nDEBUG - Timeliness required field null counts:")
+    print(df[required_columns].isna().sum())
+
+    missing_mask = df[["disposed_count", "timely_count"]].isna().any(axis=1)
+
+    print("\nDEBUG - Rows missing Timeliness counts:")
+    print(
+        df.loc[
+            missing_mask,
+            [
+                "reporting_month",
+                "source_file",
+                "processing_type",
+                "Region",
+                "disposed_count",
+                "timely_count",
+                "source_percent",
+            ],
+        ].to_string(index=False)
+    )
+        
     failed_rows = int(df[required_columns].isna().any(axis=1).sum())
     return {
         "rule": "Timeliness Required Fields",
