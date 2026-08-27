@@ -390,3 +390,42 @@ def test_timeliness_non_analytical_region_placeholders_are_excluded() -> None:
     assert "( Blank )" not in cleaned["Region"].tolist()
     assert "UNKNOWN" not in cleaned["Region"].tolist()
     assert "MEPD" in cleaned["Region"].tolist()
+
+def test_clean_structure_excludes_non_geographic_eligibility_entities() -> None:
+    df = pd.DataFrame(
+        {
+            "County Name": [
+                "Bexar",
+                "State Total",
+                "State Office",
+                "Call Centers",
+                "El Paso",
+            ],
+            "Number of Cases": [100, 500, 0, 25, 200],
+        }
+    )
+
+    result = clean_structure(df)
+
+    assert result["cleaned_df"]["County Name"].tolist() == [
+        "Bexar",
+        "El Paso",
+    ]
+
+    assert result["summary"]["removed_non_geographic_row_count"] == 3
+
+def test_clean_structure_excludes_non_geographic_entities_case_insensitively() -> None:
+    df = pd.DataFrame(
+        {
+            "County Name": [
+                "  STATE TOTAL  ",
+                "call centers",
+                "State Office",
+                "Travis",
+            ]
+        }
+    )
+
+    result = clean_structure(df)
+
+    assert result["cleaned_df"]["County Name"].tolist() == ["Travis"]

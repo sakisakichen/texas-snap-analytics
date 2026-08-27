@@ -351,22 +351,43 @@ def _validate_non_negative_numeric_values(
         "failed_rows": failed_rows,
     }
 
+TEXAS_COUNTIES = {
+    "ANDERSON", "ANDREWS", "ANGELINA", "ARANSAS", "ARCHER", "ARMSTRONG", "ATASCOSA", "AUSTIN",
+    "BAILEY", "BANDERA", "BASTROP", "BAYLOR", "BEE", "BELL", "BEXAR", "BLANCO", "BORDEN", "BOSQUE",
+    "BOWIE", "BRAZORIA", "BRAZOS", "BREWSTER", "BRISCOE", "BROOKS", "BROWN", "BURLESON", "BURNET",
+    "CALDWELL", "CALHOUN", "CALLAHAN", "CAMERON", "CAMP", "CARSON", "CASS", "CASTRO", "CHAMBERS",
+    "CHEROKEE", "CHILDRESS", "CLAY", "COCHRAN", "COKE", "COLEMAN", "COLLIN", "COLLINGSWORTH",
+    "COLORADO", "COMAL", "COMANCHE", "CONCHO", "COOKE", "CORYELL", "COTTLE", "CRANE", "CROCKETT",
+    "CROSBY", "CULBERSON", "DALLAM", "DALLAS", "DAWSON", "DEAF SMITH", "DELTA", "DENTON", "DEWITT",
+    "DICKENS", "DIMMIT", "DONLEY", "DUVAL", "EASTLAND", "ECTOR", "EDWARDS", "EL PASO", "ELLIS",
+    "ERATH", "FALLS", "FANNIN", "FAYETTE", "FISHER", "FLOYD", "FOARD", "FORT BEND", "FRANKLIN",
+    "FREESTONE", "FRIO", "GAINES", "GALVESTON", "GARZA", "GILLESPIE", "GLASSCOCK", "GOLIAD",
+    "GONZALES", "GRAY", "GRAYSON", "GREGG", "GRIMES", "GUADALUPE", "HALE", "HALL", "HAMILTON",
+    "HANSFORD", "HARDEMAN", "HARDIN", "HARRIS", "HARRISON", "HARTLEY", "HASKELL", "HAYS",
+    "HEMPHILL", "HENDERSON", "HIDALGO", "HILL", "HOCKLEY", "HOOD", "HOPKINS", "HOUSTON", "HOWARD",
+    "HUDSPETH", "HUNT", "HUTCHINSON", "IRION", "JACK", "JACKSON", "JASPER", "JEFF DAVIS",
+    "JEFFERSON", "JIM HOGG", "JIM WELLS", "JOHNSON", "JONES", "KARNES", "KAUFMAN", "KENDALL",
+    "KENEDY", "KENT", "KERR", "KIMBLE", "KING", "KINNEY", "KLEBERG", "KNOX", "LA SALLE", "LAMAR",
+    "LAMB", "LAMPASAS", "LAVACA", "LEE", "LEON", "LIBERTY", "LIMESTONE", "LIPSCOMB", "LIVE OAK",
+    "LLANO", "LOVING", "LUBBOCK", "LYNN", "MADISON", "MARION", "MARTIN", "MASON", "MATAGORDA",
+    "MAVERICK", "MCCULLOCH", "MCLENNAN", "MCMULLEN", "MEDINA", "MENARD", "MIDLAND", "MILAM",
+    "MILLS", "MITCHELL", "MONTAGUE", "MONTGOMERY", "MOORE", "MORRIS", "MOTLEY", "NACOGDOCHES",
+    "NAVARRO", "NEWTON", "NOLAN", "NUECES", "OCHILTREE", "OLDHAM", "ORANGE", "PALO PINTO",
+    "PANOLA", "PARKER", "PARMER", "PECOS", "POLK", "POTTER", "PRESIDIO", "RAINS", "RANDALL",
+    "REAGAN", "REAL", "RED RIVER", "REEVES", "REFUGIO", "ROBERTS", "ROBERTSON", "ROCKWALL",
+    "RUNNELS", "RUSK", "SABINE", "SAN AUGUSTINE", "SAN JACINTO", "SAN PATRICIO", "SAN SABA",
+    "SCHLEICHER", "SCURRY", "SHACKELFORD", "SHELBY", "SHERMAN", "SMITH", "SOMERVELL", "STARR",
+    "STEPHENS", "STERLING", "STONEWALL", "SUTTON", "SWISHER", "TARRANT", "TAYLOR", "TERRELL",
+    "TERRY", "THROCKMORTON", "TITUS", "TOM GREEN", "TRAVIS", "TRINITY", "TYLER", "UPSHUR",
+    "UPTON", "UVALDE", "VAL VERDE", "VAN ZANDT", "VICTORIA", "WALKER", "WALLER", "WARD",
+    "WASHINGTON", "WEBB", "WHARTON", "WHEELER", "WICHITA", "WILBARGER", "WILLACY", "WILLIAMSON",
+    "WILSON", "WINKLER", "WISE", "WOOD", "YOAKUM", "YOUNG", "ZAPATA", "ZAVALA",
+}
 
 def _validate_reporting_entity(
     df: pd.DataFrame,
 ) -> Dict[str, Any]:
     """Validate that County Name values match a known reporting entity."""
-    known_counties = {
-        "BEXAR",
-        "DALLAS",
-        "HARRIS",
-        "TRAVIS",
-        "MCLENNAN",
-        "NACOGDOCHES",
-        "MATAGORDA",
-        "TARRANT",
-        "EL PASO",
-    }
 
     if "County Name" not in df.columns:
         return {
@@ -375,8 +396,16 @@ def _validate_reporting_entity(
             "failed_rows": len(df),
         }
 
-    county_values = df["County Name"].astype(str).str.upper()
-    failed_rows = int((~county_values.isin(known_counties)).sum())
+    county_values = (
+    df["County Name"]
+    .astype(str)
+    .str.strip()
+    .str.upper()
+)
+
+    failed_rows = int(
+        (~county_values.isin(TEXAS_COUNTIES)).sum()
+    )
 
     return {
         "rule": "Valid Reporting Entity",

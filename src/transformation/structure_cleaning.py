@@ -16,7 +16,13 @@ TIMELINESS_SECTION_LABELS = {
     "REDETERMINATIONS": "Redeterminations",
 }
 
-
+ELIGIBILITY_NON_GEOGRAPHIC_ENTITIES = {
+    "STATE TOTAL",
+    "STATE TOTAL1",
+    "STATE TOTAL¹",
+    "STATE OFFICE",
+    "CALL CENTERS",
+}
 def _normalize_text(value: Any) -> str:
     """Convert an Excel cell value to a comparable text string."""
     if pd.isna(value):
@@ -159,6 +165,31 @@ def _remove_empty_rows(df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
     removed_row_count = original_row_count - int(cleaned_df.shape[0])
     return cleaned_df, removed_row_count
 
+def _remove_non_geographic_eligibility_rows(
+    df: pd.DataFrame,
+) -> Tuple[pd.DataFrame, int]:
+    """Exclude known non-geographic reporting entities from county-level Eligibility data."""
+    if "County Name" not in df.columns:
+        return df.copy(), 0
+
+    working_df = df.copy()
+
+    normalized_entities = (
+        working_df["County Name"]
+        .astype("string")
+        .str.strip()
+        .str.upper()
+    )
+
+    exclude_mask = normalized_entities.isin(
+        ELIGIBILITY_NON_GEOGRAPHIC_ENTITIES
+    )
+
+    removed_count = int(exclude_mask.sum())
+
+    cleaned_df = working_df.loc[~exclude_mask].copy()
+
+    return cleaned_df, removed_count
 
 def _remove_empty_columns(df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
     """Remove columns whose cells are all missing values."""
@@ -211,6 +242,11 @@ def clean_structure(df: pd.DataFrame) -> Dict[str, Any]:
 
     cleaned_df, removed_row_count = _remove_empty_rows(working_df)
     cleaned_df, removed_column_count = _remove_empty_columns(cleaned_df)
+
+    cleaned_df, removed_non_geographic_row_count = (
+        _remove_non_geographic_eligibility_rows(cleaned_df)
+    )
+
     structure_issues = _detect_duplicated_header_rows(cleaned_df)
 
     _validate_structure(cleaned_df)
@@ -220,6 +256,7 @@ def clean_structure(df: pd.DataFrame) -> Dict[str, Any]:
         "output_row_count": int(cleaned_df.shape[0]),
         "removed_row_count": removed_row_count,
         "removed_column_count": removed_column_count,
+        "removed_non_geographic_row_count": removed_non_geographic_row_count,
         "structure_issues": structure_issues,
     }
 
