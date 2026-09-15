@@ -250,18 +250,19 @@ def _validate_timeliness_total_reconciliation_profile(df: pd.DataFrame) -> Dict[
     return {"rule": "Timeliness Total Reconciliation", "status": "PROFILE", "failed_rows": 0}
 
 
+
 def _validate_county_name_required(
     df: pd.DataFrame,
 ) -> Dict[str, Any]:
-    """Validate that the County Name column contains no missing values."""
-    if "County Name" not in df.columns:
+    """Validate that the county_name column contains no missing values."""
+    if "county_name" not in df.columns:
         return {
             "rule": "County Name Required",
             "status": "FAIL",
             "failed_rows": len(df),
         }
 
-    failed_rows = int(df["County Name"].isna().sum())
+    failed_rows = int(df["county_name"].isna().sum())
 
     return {
         "rule": "County Name Required",
@@ -301,9 +302,9 @@ def _validate_required_numeric_fields(
 ) -> Dict[str, Any]:
     """Validate that required numeric columns are present and non-null."""
     required_columns = [
-        "Number of Cases",
-        "Number of Eligible Individuals",
-        "Total SNAP Payments",
+        "case_count",
+        "eligible_individual_count",
+        "total_snap_payments",
     ]
 
     missing_columns = [column for column in required_columns if column not in df.columns]
@@ -330,9 +331,9 @@ def _validate_non_negative_numeric_values(
 ) -> Dict[str, Any]:
     """Validate that numeric fields present in the DataFrame are not negative."""
     numeric_columns = [
-        "Number of Cases",
-        "Number of Eligible Individuals",
-        "Total SNAP Payments",
+        "case_count",
+        "eligible_individual_count",
+        "total_snap_payments",
     ]
     available_columns = [column for column in numeric_columns if column in df.columns]
 
@@ -389,7 +390,7 @@ def _validate_reporting_entity(
 ) -> Dict[str, Any]:
     """Validate that County Name values match a known reporting entity."""
 
-    if "County Name" not in df.columns:
+    if "county_name" not in df.columns:
         return {
             "rule": "Valid Reporting Entity",
             "status": "FAIL",
@@ -397,7 +398,7 @@ def _validate_reporting_entity(
         }
 
     county_values = (
-    df["County Name"]
+    df["county_name"]
     .astype(str)
     .str.strip()
     .str.upper()

@@ -13,7 +13,7 @@ from src.validation.data_quality import (
 
 
 def test_county_name_required_passes_when_present_and_non_null() -> None:
-    df = pd.DataFrame({"County Name": ["BEXAR", "Dallas", "HARRIS"]})
+    df = pd.DataFrame({"county_name": ["BEXAR", "Dallas", "HARRIS"]})
 
     result = _validate_county_name_required(df)
 
@@ -21,7 +21,7 @@ def test_county_name_required_passes_when_present_and_non_null() -> None:
 
 
 def test_county_name_required_fails_for_missing_values() -> None:
-    df = pd.DataFrame({"County Name": ["BEXAR", None, "HARRIS"]})
+    df = pd.DataFrame({"county_name": ["BEXAR", None, "HARRIS"]})
 
     result = _validate_county_name_required(df)
 
@@ -63,9 +63,9 @@ def test_report_month_required_fails_for_invalid_yyyy_mm_format() -> None:
 def test_required_numeric_fields_pass_when_all_required_numbers_present() -> None:
     df = pd.DataFrame(
         {
-            "Number of Cases": [10, 15, 20],
-            "Number of Eligible Individuals": [100, 200, 300],
-            "Total SNAP Payments": [1500.0, 2000.0, 2500.0],
+            "case_count": [10, 15, 20],
+            "eligible_individual_count": [100, 200, 300],
+            "total_snap_payments": [1500.0, 2000.0, 2500.0],
         }
     )
 
@@ -77,9 +77,9 @@ def test_required_numeric_fields_pass_when_all_required_numbers_present() -> Non
 def test_required_numeric_fields_fail_when_required_numeric_value_missing() -> None:
     df = pd.DataFrame(
         {
-            "Number of Cases": [10, None, 20],
-            "Number of Eligible Individuals": [100, 200, 300],
-            "Total SNAP Payments": [1500.0, 2000.0, 2500.0],
+            "case_count": [10, None, 20],
+            "eligible_individual_count": [100, 200, 300],
+            "total_snap_payments": [1500.0, 2000.0, 2500.0],
         }
     )
 
@@ -91,8 +91,8 @@ def test_required_numeric_fields_fail_when_required_numeric_value_missing() -> N
 def test_non_negative_numeric_values_pass_when_values_are_non_negative() -> None:
     df = pd.DataFrame(
         {
-            "Number of Cases": [0, 10, 25],
-            "Total SNAP Payments": [0.0, 1500.0, 2000.0],
+            "case_count": [0, 10, 25],
+            "total_snap_payments": [0.0, 1500.0, 2000.0],
         }
     )
 
@@ -104,8 +104,8 @@ def test_non_negative_numeric_values_pass_when_values_are_non_negative() -> None
 def test_non_negative_numeric_values_fail_when_negative_values_exist() -> None:
     df = pd.DataFrame(
         {
-            "Number of Cases": [0, -1, 25],
-            "Total SNAP Payments": [0.0, 1500.0, 2000.0],
+            "case_count": [0, -1, 25],
+            "total_snap_payments": [0.0, 1500.0, 2000.0],
         }
     )
 
@@ -115,7 +115,7 @@ def test_non_negative_numeric_values_fail_when_negative_values_exist() -> None:
 
 
 def test_valid_reporting_entity_passes_for_known_county_name() -> None:
-    df = pd.DataFrame({"County Name": ["BEXAR", "DALLAS", "HARRIS"]})
+    df = pd.DataFrame({"county_name": ["BEXAR", "DALLAS", "HARRIS"]})
 
     result = _validate_reporting_entity(df)
 
@@ -123,7 +123,7 @@ def test_valid_reporting_entity_passes_for_known_county_name() -> None:
 
 
 def test_valid_reporting_entity_fails_for_invalid_county_name() -> None:
-    df = pd.DataFrame({"County Name": ["BEXAR", "NOT_A_COUNTY", "HARRIS"]})
+    df = pd.DataFrame({"county_name": ["BEXAR", "NOT_A_COUNTY", "HARRIS"]})
 
     result = _validate_reporting_entity(df)
 
@@ -133,11 +133,11 @@ def test_valid_reporting_entity_fails_for_invalid_county_name() -> None:
 def test_validate_data_returns_data_and_summary_dictionary() -> None:
     df = pd.DataFrame(
         {
-            "County Name": ["BEXAR", "DALLAS"],
+            "county_name": ["BEXAR", "DALLAS"],
             "report_month": ["2024-01", "2024-02"],
-            "Number of Cases": [10, 15],
-            "Number of Eligible Individuals": [100, 150],
-            "Total SNAP Payments": [1500.0, 2000.0],
+            "case_count": [10, 15],
+            "eligible_individual_count": [100, 150],
+            "total_snap_payments": [1500.0, 2000.0],
         }
     )
 
@@ -153,11 +153,11 @@ def test_validate_data_returns_data_and_summary_dictionary() -> None:
 def test_validate_data_summary_contains_status_counts_and_results() -> None:
     df = pd.DataFrame(
         {
-            "County Name": ["BEXAR", "DALLAS"],
+            "county_name": ["BEXAR", "DALLAS"],
             "report_month": ["2024-01", "2024-02"],
-            "Number of Cases": [10, 15],
-            "Number of Eligible Individuals": [100, 150],
-            "Total SNAP Payments": [1500.0, 2000.0],
+            "case_count": [10, 15],
+            "eligible_individual_count": [100, 150],
+            "total_snap_payments": [1500.0, 2000.0],
         }
     )
 
@@ -174,11 +174,11 @@ def test_validate_data_summary_contains_status_counts_and_results() -> None:
 def test_validate_data_pass_dataset_returns_pass_summary() -> None:
     df = pd.DataFrame(
         {
-            "County Name": ["BEXAR", "DALLAS"],
+            "county_name": ["BEXAR", "DALLAS"],
             "report_month": ["2024-01", "2024-02"],
-            "Number of Cases": [10, 15],
-            "Number of Eligible Individuals": [100, 150],
-            "Total SNAP Payments": [1500.0, 2000.0],
+            "case_count": [10, 15],
+            "eligible_individual_count": [100, 150],
+            "total_snap_payments": [1500.0, 2000.0],
         }
     )
 
@@ -190,11 +190,11 @@ def test_validate_data_pass_dataset_returns_pass_summary() -> None:
 def test_validate_data_fail_dataset_returns_fail_summary() -> None:
     df = pd.DataFrame(
         {
-            "County Name": ["BEXAR", "NOT_A_COUNTY"],
+            "county_name": ["BEXAR", "NOT_A_COUNTY"],
             "report_month": ["2024-01", "2024-02"],
-            "Number of Cases": [10, 15],
-            "Number of Eligible Individuals": [100, 150],
-            "Total SNAP Payments": [1500.0, 2000.0],
+            "case_count": [10, 15],
+            "eligible_individual_count": [100, 150],
+            "total_snap_payments": [1500.0, 2000.0],
         }
     )
 
@@ -206,11 +206,11 @@ def test_validate_data_fail_dataset_returns_fail_summary() -> None:
 def test_validate_data_does_not_modify_input_dataframe() -> None:
     df = pd.DataFrame(
         {
-            "County Name": ["BEXAR", "DALLAS"],
+            "county_name": ["BEXAR", "DALLAS"],
             "report_month": ["2024-01", "2024-02"],
-            "Number of Cases": [10, 15],
-            "Number of Eligible Individuals": [100, 150],
-            "Total SNAP Payments": [1500.0, 2000.0],
+            "case_count": [10, 15],
+            "eligible_individual_count": [100, 150],
+            "total_snap_payments": [1500.0, 2000.0],
         }
     )
     original = df.copy(deep=True)
@@ -222,7 +222,7 @@ def test_validate_data_does_not_modify_input_dataframe() -> None:
 
 def test_validate_data_non_dataframe_input_raises_type_error() -> None:
     with pytest.raises(TypeError):
-        validate_data({"County Name": ["BEXAR"]})
+        validate_data({"county_name": ["BEXAR"]})
 
 
 def test_timeliness_valid_dataset_passes_blocking_validation() -> None:

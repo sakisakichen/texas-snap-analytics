@@ -29,6 +29,18 @@ COUNTY_SOURCE_CORRECTIONS = {
 
 COUNTY_NAME_MAPPING = COUNTY_SOURCE_CORRECTIONS
 
+ELIGIBILITY_COLUMN_MAPPING = {
+    "County Name": "county_name",
+    "Number of Cases": "case_count",
+    "Number of Eligible Individuals": "eligible_individual_count",
+    "Individuals: Ages < 5": "eligible_under_5_count",
+    "Individuals: Ages 5 - 17": "eligible_5_17_count",
+    "Individuals: Ages 18 - 59": "eligible_18_59_count",
+    "Individuals: Ages 60 - 64": "eligible_60_64_count",
+    "Individuals: Ages 65 +": "eligible_65_plus_count",
+    "Total SNAP Payments": "total_snap_payments",
+    "Avg Payment / Case": "avg_payment_per_case",
+}
 
 def _trim_whitespace(df: pd.DataFrame) -> pd.DataFrame:
     """Trim leading and trailing whitespace from string values only."""
@@ -41,6 +53,16 @@ def _trim_whitespace(df: pd.DataFrame) -> pd.DataFrame:
 
     return trimmed_df
 
+def _normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize whitespace in column names while preserving their business meaning."""
+    standardized_df = df.copy()
+
+    standardized_df.columns = [
+        " ".join(str(column).split())
+        for column in standardized_df.columns
+    ]
+
+    return standardized_df
 
 def _remove_formatting_symbols(df: pd.DataFrame) -> pd.DataFrame:
     """Remove presentation symbols from configured currency-like columns."""
@@ -91,6 +113,16 @@ def _apply_county_name_mapping(df: pd.DataFrame) -> pd.DataFrame:
     return standardized_df
 
 
+def _standardize_eligibility_schema(df: pd.DataFrame) -> pd.DataFrame:
+    """Rename Eligibility source columns to the stable Silver schema."""
+    standardized_df = df.copy()
+
+    standardized_df = standardized_df.rename(
+        columns=ELIGIBILITY_COLUMN_MAPPING
+    )
+
+    return standardized_df
+
 def _standardize_timeliness_representation(df: pd.DataFrame) -> pd.DataFrame:
     """Apply Timeliness-only representation cleanup while preserving source semantics."""
     standardized_df = df.copy()
@@ -126,11 +158,16 @@ def standardize_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         raise TypeError("Input must be a pandas DataFrame.")
 
     working_df = df.copy()
+
+    working_df = _normalize_column_names(working_df)
+
     working_df = _trim_whitespace(working_df)
     working_df = _remove_formatting_symbols(working_df)
     working_df = _standardize_county_name_case(working_df)
     working_df = _apply_county_case_overrides(working_df)
     working_df = _apply_county_name_mapping(working_df)
+
+    working_df = _standardize_eligibility_schema(working_df)
     working_df = _standardize_timeliness_representation(working_df)
 
     summary: Dict[str, Any] = {

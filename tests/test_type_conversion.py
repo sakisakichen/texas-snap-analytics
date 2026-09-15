@@ -7,7 +7,7 @@ from decimal import Decimal
 def test_string_columns_convert_to_nullable_string_dtype() -> None:
     df = pd.DataFrame(
         {
-            "County Name": ["BEXAR", None, "Dallas"],
+            "county_name": ["BEXAR", None, "Dallas"],
             "report_month": ["2024-01", None, "2024-02"],
             "source_file": ["file_a.xls", None, "file_b.xls"],
             "Other": [1, 2, 3],
@@ -17,10 +17,10 @@ def test_string_columns_convert_to_nullable_string_dtype() -> None:
     result = convert_data(df)
     converted = result["data"]
 
-    assert str(converted["County Name"].dtype) == "string"
+    assert str(converted["county_name"].dtype) == "string"
     assert str(converted["report_month"].dtype) == "string"
     assert str(converted["source_file"].dtype) == "string"
-    assert pd.isna(converted["County Name"].iloc[1])
+    assert pd.isna(converted["county_name"].iloc[1])
     assert pd.isna(converted["report_month"].iloc[1])
     assert pd.isna(converted["source_file"].iloc[1])
 
@@ -28,8 +28,13 @@ def test_string_columns_convert_to_nullable_string_dtype() -> None:
 def test_integer_columns_convert_to_nullable_int64() -> None:
     df = pd.DataFrame(
         {
-            "Number of Cases": ["100", 200.0, None, "300"],
-            "Total SNAP Payments": ["50", 100.0, None, "150"],
+            "case_count": ["100", 200.0, None, "300"],
+            "eligible_individual_count": ["150", 250.0, None, "350"],
+            "eligible_under_5_count": ["10", 20.0, None, "30"],
+            "eligible_5_17_count": ["20", 30.0, None, "40"],
+            "eligible_18_59_count": ["80", 140.0, None, "200"],
+            "eligible_60_64_count": ["15", 25.0, None, "35"],
+            "eligible_65_plus_count": ["25", 35.0, None, "45"],
             "Other": ["keep", "me", "as", "is"],
         }
     )
@@ -37,14 +42,25 @@ def test_integer_columns_convert_to_nullable_int64() -> None:
     result = convert_data(df)
     converted = result["data"]
 
-    assert str(converted["Number of Cases"].dtype) == "Int64"
-    assert converted["Number of Cases"].tolist() == [100, 200, pd.NA, 300]
-    assert pd.isna(converted["Number of Cases"].iloc[2])
+    integer_columns = [
+        "case_count",
+        "eligible_individual_count",
+        "eligible_under_5_count",
+        "eligible_5_17_count",
+        "eligible_18_59_count",
+        "eligible_60_64_count",
+        "eligible_65_plus_count",
+    ]
+
+    for column in integer_columns:
+        assert str(converted[column].dtype) == "Int64"
+
+    assert converted["case_count"].tolist() == [100, 200, pd.NA, 300]
 
 def test_total_snap_payments_converts_to_decimal_money() -> None:
     df = pd.DataFrame(
         {
-            "Total SNAP Payments": [
+            "total_snap_payments": [
                 "50",
                 100.0,
                 None,
@@ -57,7 +73,7 @@ def test_total_snap_payments_converts_to_decimal_money() -> None:
     result = convert_data(df)
     converted = result["data"]
 
-    assert converted["Total SNAP Payments"].tolist() == [
+    assert converted["total_snap_payments"].tolist() == [
         Decimal("50.00"),
         Decimal("100.00"),
         None,
@@ -66,19 +82,19 @@ def test_total_snap_payments_converts_to_decimal_money() -> None:
     ]
 
 def test_invalid_integer_values_become_missing_without_raising() -> None:
-    df = pd.DataFrame({"Number of Cases": ["100", "ABC", "200", None]})
+    df = pd.DataFrame({"case_count": ["100", "ABC", "200", None]})
 
     result = convert_data(df)
     converted = result["data"]
 
-    assert converted["Number of Cases"].tolist() == [100, pd.NA, 200, pd.NA]
-    assert str(converted["Number of Cases"].dtype) == "Int64"
+    assert converted["case_count"].tolist() == [100, pd.NA, 200, pd.NA]
+    assert str(converted["case_count"].dtype) == "Int64"
 
 
 def test_float_columns_convert_to_nullable_float64() -> None:
     df = pd.DataFrame(
         {
-            "Avg Payment / Case": ["10.5", 20.0, None, "30.25"],
+            "avg_payment_per_case": ["10.5", 20.0, None, "30.25"],
             "Other": ["x", "y", "z", "w"],
         }
     )
@@ -86,28 +102,28 @@ def test_float_columns_convert_to_nullable_float64() -> None:
     result = convert_data(df)
     converted = result["data"]
 
-    assert str(converted["Avg Payment / Case"].dtype) == "Float64"
-    assert converted["Avg Payment / Case"].tolist() == [10.5, 20.0, pd.NA, 30.25]
-    assert pd.isna(converted["Avg Payment / Case"].iloc[2])
+    assert str(converted["avg_payment_per_case"].dtype) == "Float64"
+    assert converted["avg_payment_per_case"].tolist() == [10.5, 20.0, pd.NA, 30.25]
+    assert pd.isna(converted["avg_payment_per_case"].iloc[2])
 
 
 def test_invalid_float_values_become_missing_without_raising() -> None:
-    df = pd.DataFrame({"Avg Payment / Case": ["10.5", "XYZ", "20.0", None]})
+    df = pd.DataFrame({"avg_payment_per_case": ["10.5", "XYZ", "20.0", None]})
 
     result = convert_data(df)
     converted = result["data"]
 
-    assert converted["Avg Payment / Case"].tolist() == [10.5, pd.NA, 20.0, pd.NA]
-    assert str(converted["Avg Payment / Case"].dtype) == "Float64"
+    assert converted["avg_payment_per_case"].tolist() == [10.5, pd.NA, 20.0, pd.NA]
+    assert str(converted["avg_payment_per_case"].dtype) == "Float64"
 
 
 def test_conversion_only_affects_configured_columns() -> None:
     df = pd.DataFrame(
         {
-            "County Name": ["BEXAR", "Dallas"],
+            "county_name": ["BEXAR", "Dallas"],
             "Unconfigured Value": ["$1,000", "$2,000"],
-            "Number of Cases": ["10", "20"],
-            "Avg Payment / Case": ["12.5", "15.0"],
+            "case_count": ["10", "20"],
+            "avg_payment_per_case": ["12.5", "15.0"],
         }
     )
 
@@ -115,17 +131,17 @@ def test_conversion_only_affects_configured_columns() -> None:
     converted = result["data"]
 
     assert converted["Unconfigured Value"].tolist() == ["$1,000", "$2,000"]
-    assert str(converted["County Name"].dtype) == "string"
-    assert str(converted["Number of Cases"].dtype) == "Int64"
-    assert str(converted["Avg Payment / Case"].dtype) == "Float64"
+    assert str(converted["county_name"].dtype) == "string"
+    assert str(converted["case_count"].dtype) == "Int64"
+    assert str(converted["avg_payment_per_case"].dtype) == "Float64"
 
 
 def test_convert_data_does_not_modify_input_dataframe() -> None:
     df = pd.DataFrame(
         {
-            "County Name": ["BEXAR", None],
-            "Number of Cases": ["10", "20"],
-            "Avg Payment / Case": ["10.5", "20.0"],
+            "county_name": ["BEXAR", None],
+            "case_count": ["10", "20"],
+            "avg_payment_per_case": ["10.5", "20.0"],
         }
     )
     original = df.copy(deep=True)
@@ -138,12 +154,12 @@ def test_convert_data_does_not_modify_input_dataframe() -> None:
 def test_convert_data_returns_public_dictionary_contract() -> None:
     df = pd.DataFrame(
         {
-            "County Name": ["BEXAR"],
+            "county_name": ["BEXAR"],
             "report_month": ["2024-01"],
             "source_file": ["file_a.xls"],
-            "Number of Cases": ["10"],
-            "Total SNAP Payments": ["100"],
-            "Avg Payment / Case": ["10.5"],
+            "case_count": ["10"],
+            "total_snap_payments": ["100"],
+            "avg_payment_per_case": ["10.5"],
         }
     )
 
@@ -159,12 +175,12 @@ def test_convert_data_returns_public_dictionary_contract() -> None:
 def test_summary_contains_expected_metadata() -> None:
     df = pd.DataFrame(
         {
-            "County Name": ["BEXAR"],
+            "county_name": ["BEXAR"],
             "report_month": ["2024-01"],
             "source_file": ["file_a.xls"],
-            "Number of Cases": ["10"],
-            "Total SNAP Payments": ["100"],
-            "Avg Payment / Case": ["10.5"],
+            "case_count": ["10"],
+            "total_snap_payments": ["100"],
+            "avg_payment_per_case": ["10.5"],
         }
     )
 
@@ -246,4 +262,4 @@ def test_timeliness_type_conversion_rejects_ambiguous_percent_values() -> None:
 
 def test_convert_data_raises_type_error_for_non_dataframe_input() -> None:
     with pytest.raises(TypeError):
-        convert_data({"County Name": ["BEXAR"]})
+        convert_data({"county_name": ["BEXAR"]})

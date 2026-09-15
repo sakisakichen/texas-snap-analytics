@@ -9,7 +9,7 @@ import pandas as pd
 from decimal import Decimal, InvalidOperation
 
 STRING_COLUMNS = [
-    "County Name",
+    "county_name",
     "report_month",
     "reporting_month",
     "source_file",
@@ -18,25 +18,25 @@ STRING_COLUMNS = [
 ]
 
 INTEGER_COLUMNS = [
-    "Number of Cases",
-    "Number of Eligible Individuals",
-    "Individuals:        Ages < 5",
-    "Individuals:        Ages 5 - 17",
-    "Individuals:        Ages 18 - 59",
-    "Individuals:        Ages 60 - 64",
-    "Individuals:        Ages 65 +",
+    "case_count",
+    "eligible_individual_count",
+    "eligible_under_5_count",
+    "eligible_5_17_count",
+    "eligible_18_59_count",
+    "eligible_60_64_count",
+    "eligible_65_plus_count",
 
     "disposed_count",
     "timely_count",
 ]
 
 DECIMAL_COLUMNS = [
-    "Total SNAP Payments",
+    "total_snap_payments",
 ]
 
 FLOAT_COLUMNS = [
-    "Avg Payment / Case",
-    "source_percent"
+    "avg_payment_per_case",
+    "source_percent",
 ]
 
 

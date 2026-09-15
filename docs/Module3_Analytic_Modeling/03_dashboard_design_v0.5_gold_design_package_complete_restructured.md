@@ -1,7 +1,7 @@
 # SNAP Analytics Platform V2 --- Dashboard Design
 
 **Module:** Module 3 --- Analytics Modeling / Gold Layer\
-**Status:** v0.4 --- Design Complete / Gold Logical Schema v1 Frozen\
+**Status:** v0.5 --- Gold Design Package Complete / Implementation Ready\
 **Primary Audience:** Program Leadership
 
 ## 1. Purpose
@@ -242,13 +242,13 @@ implementation validation reveals a material source/grain issue.
 ### 5.1 Fact #1 --- `fact_snap_processing`
 
 **Business process:** SNAP Processing Performance\
-**Candidate grain:** One row per **Region × Reporting Month × Processing
+**Final grain:** One row per **Region × Reporting Month × Processing
 Type**
 
 Core fields:
 
 -   `region_key`
--   `reporting_month_key`
+-   `month_key`
 -   `processing_type`
 -   `disposed_count`
 -   `timely_count`
@@ -261,12 +261,12 @@ Derived:
 
 **Business process:** Monthly SNAP Benefit Caseload & Eligibility
 Snapshot\
-**Candidate grain:** One row per **County × Benefit Month**
+**Final grain:** One row per **County × Reporting Month**
 
 Core fields:
 
 -   `county_key`
--   `benefit_month_key`
+-   `month_key`
 -   `case_count`
 -   `eligible_individual_count`
 -   age-band eligible counts
@@ -278,40 +278,60 @@ Derived:
 
 ### 5.3 `dim_month` --- Shared / Conformed Monthly Dimension
 
-Both facts use the same calendar-month dimension, while preserving
-different business roles:
+Both facts use the same conformed calendar-month dimension.
 
--   `fact_snap_processing.reporting_month_key → dim_month.month_key`
--   `fact_snap_caseload_monthly.benefit_month_key → dim_month.month_key`
+**Final grain:** One row per calendar month.
 
-Candidate attributes:
+Physical columns:
 
--   `month_key`
--   `year`
--   `quarter`
--   `month_number`
--   `month_name`
+-   `month_key INT` --- meaningful `YYYYMM` key, e.g. `202401`
+-   `reporting_month STRING` --- source-friendly `YYYY-MM`
+-   `year INT`
+-   `quarter STRING`
+-   `month_number INT`
+-   `month_name STRING`
 
-The shared dimension is valid only if Reporting Month and Benefit Month
-both map to the same calendar-month structure. Their business meanings
-remain distinct even when both reference, for example, April 2024.
+Relationships:
+
+-   `dim_month (1) → fact_snap_processing (Many)`
+-   `dim_month (1) → fact_snap_caseload_monthly (Many)`
+
+Both facts store `month_key` as the physical foreign key. The shared
+dimension provides one consistent calendar definition across business
+processes.
 
 ### 5.4 `dim_region`
 
-Candidate attributes:
+**Final grain:** One row per geographic reporting region.
 
--   `region_key`
--   `reporting_region_code`
--   `region_name` when supported by authoritative reference data
+Physical columns:
+
+-   `region_key INT` --- warehouse surrogate key
+-   `region_code STRING` --- source / business region code
+-   `region_name STRING`
+
+Relationships:
+
+-   `dim_region (1) → fact_snap_processing (Many)`
+-   `dim_region (1) → dim_county (Many)`
 
 ### 5.5 `dim_county`
 
-Candidate attributes:
+**Final grain:** One row per geographic county.
 
--   `county_key`
--   `county_fips`
--   `county_name`
--   `region_key` through a validated County → reporting-region crosswalk
+Physical columns:
+
+-   `county_key INT` --- warehouse surrogate key
+-   `county_fips STRING` --- standardized geographic identifier
+-   `county_name STRING`
+-   `region_key INT` --- foreign key to `dim_region`
+
+Relationships:
+
+-   `dim_county (1) → fact_snap_caseload_monthly (Many)`
+-   `dim_region (1) → dim_county (Many)`
+
+The expected analytical population is 254 Texas counties.
 
 ### 5.6 County → Region Geography Crosswalk
 
@@ -388,9 +408,9 @@ forcing all source data into one table.
 
 Safe examples:
 
-`fact_snap_processing.reporting_month_key = dim_month.month_key`
+`fact_snap_processing.month_key = dim_month.month_key`
 
-`fact_snap_caseload_monthly.benefit_month_key = dim_month.month_key`
+`fact_snap_caseload_monthly.month_key = dim_month.month_key`
 
 ### Fact-to-Fact Join Warning
 
@@ -542,39 +562,436 @@ Detailed questions belong primarily to the analytical layer:
 Leadership may receive concise trend signals, but the Strategic
 Dashboard should not become a full root-cause-analysis workspace.
 
-## 13. Current Data State and Implementation Dependencies
+## 13. Current Data State and Implementation Readiness
 
 ### 13.1 Eligible / Caseload Domain
 
 Current state:
 
-`Raw/Bronze → Transformation & Validation Logic Implemented → Validation Gate → Trusted Silver Not Yet Published`
+`Raw/Bronze → Structure Cleaning → Standardization → Type Conversion → Business Validation → Validation Gate → Trusted Silver ✅`
 
-No trusted Silver dataset currently exists. Silver publication remains
-blocked by incomplete reference-data validation.
+The Eligibility / Caseload Trusted Silver layer is complete.
 
-Therefore the Gold grain described in this document remains a
-**candidate logical grain** until the successfully published Silver data
-is profiled and validated.
+**Validated grain:** County × Reporting Month.  
+**Validated 2024 analytical population:** 254 Texas counties × 12 months
+= **3,048 rows**.
 
 ### 13.2 Timeliness Domain
 
 Current state:
 
-`Raw/Source Available → Transformation Not Yet Built → Validation Not Yet Built → Silver Not Available`
+`Raw/Source → Structure Cleaning → Standardization → Type Conversion → Business Validation → Validation Gate → Trusted Silver ✅`
 
-Before `fact_snap_processing` can be physically implemented, the
-Timeliness source requires its own transformation, standardization,
-business validation, and Silver publication path.
+The Timeliness Trusted Silver layer is complete.
+
+**Validated grain:** Region × Reporting Month × Processing Type.
+
+Applications and Redeterminations remain separate processing types.
 
 ### 13.3 Geography Reference
 
-County → Region mapping is an implementation dependency. The majority of
-authoritative mappings should be applied first; unmatched / ambiguous
-counties and the `02/09` reporting exception should then be investigated
-explicitly.
+County → Region remains a governed Gold implementation relationship.
+The authoritative County / Region reference should define the canonical
+mapping, with unmatched / ambiguous mappings and the `02/09` reporting
+exception handled explicitly through validation.
 
-## 14. Future External Data Enhancements
+### 13.4 Gold Implementation Readiness
+
+Both source domains have passed the Trusted Silver boundary. The Silver
+dependency that previously blocked Physical Gold has therefore been
+cleared.
+
+The Gold design package now includes the frozen logical model, final
+physical schema, source-to-target transformation design, and Gold
+acceptance criteria / validation design.
+
+## 14. Physical Gold Model Design
+
+**Status: Complete ✅**
+
+The frozen logical model has been converted into an implementation-ready
+physical schema.
+
+> **Logical modeling defines what the model should represent. Physical
+> modeling defines how the tables should actually be built.**
+
+The physical-design framework is:
+
+`Purpose → Grain → Columns → Keys → Data Types → Relationships`
+
+### 14.1 `dim_month`
+
+**Purpose:** Provide one consistent calendar definition shared across
+Gold facts.  
+**Grain:** One row per calendar month.
+
+Physical columns:
+
+-   `month_key INT` --- meaningful `YYYYMM` key, e.g. `202401`
+-   `reporting_month STRING` --- source-friendly `YYYY-MM`
+-   `year INT`
+-   `quarter STRING`
+-   `month_number INT`
+-   `month_name STRING`
+
+Relationships:
+
+-   `dim_month (1) → fact_snap_processing (Many)`
+-   `dim_month (1) → fact_snap_caseload_monthly (Many)`
+
+### 14.2 `dim_region`
+
+**Purpose:** Centralize reusable reporting-region definitions and
+attributes.  
+**Grain:** One row per geographic reporting region.
+
+Physical columns:
+
+-   `region_key INT` --- warehouse surrogate key
+-   `region_code STRING` --- business / source region code
+-   `region_name STRING`
+
+Relationships:
+
+-   `dim_region (1) → fact_snap_processing (Many)`
+-   `dim_region (1) → dim_county (Many)`
+
+### 14.3 `dim_county`
+
+**Purpose:** Centralize County identity and the governed County → Region
+relationship.  
+**Grain:** One row per geographic county.
+
+Physical columns:
+
+-   `county_key INT` --- warehouse surrogate key
+-   `county_fips STRING` --- standardized geographic identifier
+-   `county_name STRING`
+-   `region_key INT` --- foreign key to `dim_region`
+
+Relationships:
+
+-   `dim_county (1) → fact_snap_caseload_monthly (Many)`
+-   `dim_region (1) → dim_county (Many)`
+
+Expected analytical population: **254 Texas counties**.
+
+### 14.4 `fact_snap_processing`
+
+**Purpose:** Represent SNAP processing workload and timeliness
+performance.  
+**Grain:** One row per Region × Reporting Month × Processing Type.
+
+Physical columns:
+
+-   `region_key INT`
+-   `month_key INT`
+-   `processing_type STRING`
+-   `disposed_count INT`
+-   `timely_count INT`
+
+No separate fact surrogate key is required in Gold v1. Natural grain
+uniqueness is enforced through:
+
+`region_key + month_key + processing_type`
+
+`timeliness_rate` remains derived rather than stored as a base analytical
+measure.
+
+### 14.5 `fact_snap_caseload_monthly`
+
+**Purpose:** Represent monthly County-level SNAP caseload and benefit
+activity.  
+**Grain:** One row per County × Reporting Month.
+
+Physical columns:
+
+-   `county_key INT`
+-   `month_key INT`
+-   `case_count INT`
+-   `eligible_individual_count INT`
+-   `eligible_under_5_count INT`
+-   `eligible_5_17_count INT`
+-   `eligible_18_59_count INT`
+-   `eligible_60_64_count INT`
+-   `eligible_65_plus_count INT`
+-   `total_snap_payments DECIMAL / NUMBER`
+
+`avg_payment_per_case` remains a derived metric rather than a governed
+base measure.
+
+### 14.6 Physical Data-Type Principles
+
+-   Count → `INT`
+-   Warehouse surrogate key → `INT`
+-   Business identifier / code → `STRING`
+-   Money → fixed-precision `DECIMAL / NUMBER`
+-   Names / categories → `STRING`
+-   Corresponding PK / FK data types must match
+
+A value that looks numeric is not automatically a numeric measure.
+Storage type follows the business role of the field.
+
+## 15. Gold Transformation Design
+
+**Status: Complete ✅**
+
+Gold transformation design defines how Trusted Silver and authoritative
+reference data become the five physical Gold tables.
+
+The reusable framework is:
+
+> **Source → Mapping → Transformation → Expected Output**
+
+Transformation patterns used in Gold v1:
+
+-   **Direct** --- preserve source value and business meaning
+-   **Rename** --- preserve the value while standardizing the target name
+-   **Derive** --- calculate a target value from source data
+-   **Lookup** --- resolve a dimension / reference key
+-   **Generate** --- create a warehouse surrogate key
+-   **Aggregate** --- combine rows only when the target grain requires it
+
+> **Silver → Gold does not automatically require aggregation.**
+
+When Trusted Silver already matches the target fact grain, Gold primarily
+performs dimension-key lookup and preserves trusted base measures.
+
+### 15.1 `dim_month`
+
+**Sources:** Eligibility Trusted Silver + Timeliness Trusted Silver.
+
+Transformation flow:
+
+`Months from Both Silvers → UNION → DISTINCT → Derive Calendar Attributes → dim_month`
+
+Mapping:
+
+-   `reporting_month` → Direct
+-   `month_key` → Derive as `YYYYMM`
+-   `year` → Derive
+-   `quarter` → Derive
+-   `month_number` → Derive
+-   `month_name` → Derive
+
+**Expected 2024 output:** 12 rows.
+
+### 15.2 `dim_region`
+
+**Canonical source:** authoritative Region reference / County → Region
+crosswalk.
+
+Timeliness Trusted Silver is used for reconciliation rather than as the
+sole canonical Region definition.
+
+Mapping:
+
+-   `region_key` → Generate
+-   `region_code` → Direct from authoritative reference
+-   `region_name` → Direct from authoritative reference
+
+Every valid Timeliness Silver Region must reconcile to exactly one
+canonical Gold Region.
+
+### 15.3 `dim_county`
+
+**Canonical source:** authoritative County reference / County → Region
+crosswalk.
+
+Eligibility Trusted Silver is used for reconciliation and County
+coverage validation.
+
+Mapping:
+
+-   `county_key` → Generate
+-   `county_fips` → Direct
+-   `county_name` → Direct
+-   `region_key` → Lookup through `dim_region`
+
+**Expected output:** 254 Texas counties.
+
+### 15.4 `fact_snap_processing`
+
+**Primary source:** Timeliness Trusted Silver only.
+
+Silver grain and Gold grain are both:
+
+`Region × Reporting Month × Processing Type`
+
+No aggregation is required.
+
+Mapping:
+
+-   Region → Lookup `dim_region` → `region_key`
+-   Reporting Month → Lookup `dim_month` → `month_key`
+-   `processing_type` → Direct
+-   `disposed_count` → Direct
+-   `timely_count` → Direct
+
+`source_percent` remains reconciliation evidence and is not promoted as
+the governed Gold analytical rate.
+
+### 15.5 `fact_snap_caseload_monthly`
+
+**Primary source:** Eligibility Trusted Silver only.
+
+Silver grain and Gold grain are both:
+
+`County × Reporting Month`
+
+No aggregation is required.
+
+Mapping:
+
+-   County → Lookup `dim_county` → `county_key`
+-   Reporting Month → Lookup `dim_month` → `month_key`
+-   Cases → Rename / preserve as `case_count`
+-   Eligible individuals → Rename / preserve as
+    `eligible_individual_count`
+-   Age-band counts → Rename / preserve
+-   Total payments → Rename / preserve with fixed decimal precision
+
+**Expected 2024 output:** 254 × 12 = **3,048 rows**.
+
+### 15.6 Transformation Principle
+
+> **Trusted Silver rows → Dimension Key Lookup → Preserve Base Measures
+> → Analytics-ready Gold Fact**
+
+Dimensions may integrate shared canonical entities across sources. Facts
+remain aligned to their specific business process and natural grain.
+
+## 16. Gold Acceptance Criteria and Validation Design
+
+**Status: Design Complete ✅**
+
+Gold acceptance criteria define what must be true before the implemented
+Gold layer can be considered trusted.
+
+The validation framework is:
+
+> **Grain → Keys → Relationships → Reconciliation → Business Metrics**
+
+The purpose is not simply to prove that transformation SQL executed. It
+is to prove that Gold preserves the intended business meaning and that
+Silver → Gold transformation did not introduce duplication, data loss,
+broken mappings, measure drift, or incorrect analytical calculations.
+
+### 16.1 `dim_month`
+
+-   `month_key` must be unique and not null.
+-   Complete 2024 model must contain exactly 12 calendar months.
+-   Every valid month appearing in either Trusted Silver dataset must map
+    to exactly one `dim_month` row.
+-   `month_key`, `reporting_month`, year, quarter, month number, and
+    month name must be internally consistent.
+
+### 16.2 `dim_region`
+
+-   `region_key` must be unique and not null.
+-   Canonical `region_code` values must not be duplicated.
+-   Every valid Timeliness Silver Region must map to exactly one
+    `dim_region` row.
+-   Unmapped or ambiguous Region values fail mapping coverage.
+-   `02/09` handling must be explicit and documented.
+
+### 16.3 `dim_county`
+
+-   Exactly 254 analytical Texas counties must be represented.
+-   `county_key` must be unique and not null.
+-   `county_fips` must be unique and not null.
+-   `region_key` must not be null.
+-   Every `region_key` must resolve to `dim_region`.
+-   Every analytical County must map to exactly one reporting Region.
+-   Duplicate, unmatched, or ambiguous County → Region mappings fail
+    validation unless handled as an explicitly governed exception.
+
+Correct row count alone is insufficient when geography relationships are
+incomplete.
+
+### 16.4 `fact_snap_processing`
+
+**Grain**
+
+`region_key + month_key + processing_type` must be unique.
+
+**Relationships**
+
+-   `region_key` and `month_key` must not be null.
+-   Every Region key must resolve to `dim_region`.
+-   Every Month key must resolve to `dim_month`.
+
+**Measure / source reconciliation**
+
+-   Gold `disposed_count` must reconcile to Timeliness Trusted Silver.
+-   Gold `timely_count` must reconcile to Timeliness Trusted Silver.
+-   Reconciliation should be available at the natural Region × Month ×
+    Processing Type grain, not only at overall totals.
+-   Counts should not be negative.
+-   `timely_count` should not exceed `disposed_count`.
+
+**Governed business metric**
+
+`timeliness_rate = SUM(timely_count) / SUM(disposed_count)`
+
+Pre-calculated source percentages must not be naively averaged to produce
+the governed metric.
+
+### 16.5 `fact_snap_caseload_monthly`
+
+**Grain**
+
+`county_key + month_key` must be unique.
+
+**Completeness**
+
+Complete 2024 output must contain **3,048 rows**:
+
+`254 counties × 12 months`
+
+**Relationships**
+
+-   `county_key` and `month_key` must not be null.
+-   Every County key must resolve to `dim_county`.
+-   Every Month key must resolve to `dim_month`.
+
+**Measure / source reconciliation**
+
+Gold base measures must reconcile to Eligibility Trusted Silver,
+including:
+
+-   `case_count`
+-   `eligible_individual_count`
+-   Age-band eligible counts
+-   `total_snap_payments`
+
+Reconciliation should support investigation at County × Month grain.
+
+**Age reconciliation**
+
+`eligible_under_5_count + eligible_5_17_count + eligible_18_59_count + eligible_60_64_count + eligible_65_plus_count = eligible_individual_count`
+
+A mismatch is flagged for investigation rather than silently corrected.
+
+**Governed business metric**
+
+`avg_payment_per_case = SUM(total_snap_payments) / SUM(case_count)`
+
+Pre-calculated row averages must not be naively averaged across Counties
+or months.
+
+### 16.6 Gold Validation Principle
+
+> **Row count correct ≠ model correct.**
+
+A Gold table can have the expected number of rows and still fail because
+of duplicate grain, orphan foreign keys, incomplete mappings, measure
+drift, or incorrect derived metrics.
+
+Acceptance criteria are defined before implementation so the implemented
+Gold model has an explicit trust gate.
+
+## 17. Future External Data Enhancements
 
 Population and Poverty Rate were considered during early dashboard
 design but are **not current project datasets**.
@@ -596,7 +1013,7 @@ These should enter the model only after:
 Gold v1 should not model or advertise these metrics as currently
 available.
 
-## 15. Validation Rules Identified During Modeling
+## 18. Validation Rules Identified During Modeling
 
 ### Caseload / Eligibility
 
@@ -624,7 +1041,7 @@ Validate:
 -   Ambiguous mappings
 -   `02/09` exception handling
 
-## 16. Design Decisions and Trade-offs
+## 19. Design Decisions and Trade-offs
 
 ### Decision 1 --- Preserve Natural Grain
 
@@ -687,7 +1104,7 @@ separately.\
 **Reason:** The project lacks authoritative business rules for weighting
 these signals into a composite resource-allocation score.
 
-## 17. Research Status
+## 20. Research Status
 
 ### Research Question #1 --- Dashboard Design Process
 
@@ -711,75 +1128,62 @@ Key production pattern:
 -   #4 Analytics Review / Approval
 -   #5 Analytics Design Trade-offs
 
-## 18. Module 3 Design Closeout
+## 21. Module 3 Design Closeout
 
 ### Design Status
 
-**Module 3 Gold Analytics Modeling Design: Complete ✅**\
-**Gold Logical Schema v1: Frozen 🔒**\
-**Physical Gold Implementation: Pending Silver Dependencies**
+**Module 3 Gold Analytics Modeling Design: Complete ✅**  
+**Gold Logical Schema v1: Frozen 🔒**  
+**Physical Gold Model Design: Complete ✅**  
+**Gold Transformation Design: Complete ✅**  
+**Gold Acceptance Criteria / Validation Design: Complete ✅**  
+**Gold Design Package: Implementation Ready ✅**
 
-### Completed in Logical Modeling v1
+### Completed in Module 3
 
 -   Leadership decision and primary user defined
 -   Primary Business Questions finalized
--   Two business processes identified
--   Candidate grains defined
--   Base vs. derived measures identified
+-   Two business processes and natural grains identified
+-   Base vs. derived measures identified
 -   Additivity behavior classified
--   Core dimensions identified
--   Shared monthly dimension designed
--   County → Region crosswalk approach defined
--   Join-safety rules documented
--   Business validation rules identified
+-   Five-table logical model frozen
+-   Physical columns, keys, data types, and relationships finalized
+-   County → Region geography approach defined
+-   Source-to-target transformation design completed for all five tables
+-   Canonical dimension-source strategy defined
+-   Fact dimension-key lookup strategy defined
+-   Expected Gold output populations defined
+-   Grain, key, relationship, and referential-integrity criteria defined
+-   Silver → Gold measure reconciliation criteria defined
+-   Age-band reconciliation defined
+-   Weighted Timeliness Rate governed
+-   Weighted Average Payment per Case governed
 -   Application benchmark scope clarified
 -   Application and Redetermination performance separated
--   Non-decision-relevant source measures separated from primary
-    dashboard KPIs
--   Five-table Gold Logical Schema v1 frozen
+-   Join-safety rules documented
+-   Gold validation gate designed before implementation
 
-### Physical Implementation Requirements
+### Remaining Execution Work
 
-1.  **Publish and profile trusted Eligible / Caseload Silver**
-    -   Complete remaining reference-data validation.
-    -   Publish trusted Silver output.
-    -   Confirm actual grain is consistent with
-        `County × Benefit Month`.
-2.  **Build Timeliness transformation / validation / Silver**
-    -   Structure cleaning
-    -   Normalization
-    -   Type conversion
-    -   Business validation
-    -   Validation report
-    -   Validation gate
-    -   Silver publication
-    -   Confirm actual grain is consistent with
-        `Region × Reporting Month × Processing Type`.
-3.  **Build and validate County → Region crosswalk**
-    -   Validate county coverage.
-    -   Identify unmatched, duplicate, or ambiguous mappings.
-    -   Handle the `02/09` reporting exception explicitly.
-4.  **Validate actual Silver grains**
-    -   Test uniqueness at the candidate fact grains.
-    -   Investigate duplicates rather than hiding them with aggregation.
-5.  **Build the five Gold tables**
-    -   `fact_snap_processing`
-    -   `fact_snap_caseload_monthly`
-    -   `dim_month`
-    -   `dim_region`
-    -   `dim_county`
-6.  **Run Gold validation**
-    -   Grain uniqueness
-    -   Referential integrity
-    -   Null / orphan keys
-    -   Measure reconciliation
-    -   Age-band reconciliation
-    -   Timeliness reconciliation
-    -   Geography crosswalk coverage
+1.  Implement / publish the warehouse representation of Trusted Silver.
+2.  Build `dim_month`, `dim_region`, and `dim_county`.
+3.  Build `fact_snap_processing` and `fact_snap_caseload_monthly`.
+4.  Execute the Step 9 Gold acceptance criteria.
+5.  Publish Trusted Gold only after the validation gate passes.
+6.  Proceed to governed semantic metrics and dashboard consumption.
 
 ### Execution Path
 
-`Module 3 Design Complete → Return to Module 2 Timeliness Cleaning → Publish Trusted Silver → Return to Module 3 Physical Gold Build → Gold Validation`
+`Trusted Silver ✅ → Physical Gold Implementation → Gold Validation Gate → Trusted Gold → Semantic Metrics → Dashboard`
 
-The next active development task is therefore **Timeliness cleaning and
-Silver preparation**, not additional Gold schema design.
+### Module 3 Production Mental Model
+
+`Business Questions → Business Process → Grain → Measures → Dimensions → Logical Model → Physical Model → Transformation Design → Acceptance Criteria → Implementation → Validation`
+
+> **Design what Gold should mean → Design how to build it → Define how
+> to prove it is correct → Then implement it.**
+
+The next active Module 3 task is **Physical Gold implementation in the
+analytical warehouse**, followed by execution of the Step 9 acceptance
+criteria.
+
