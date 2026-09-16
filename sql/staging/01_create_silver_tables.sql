@@ -5,20 +5,32 @@
 USE DATABASE SNAP_ANALYTICS;
 USE SCHEMA SILVER;
 
+
+-- ============================================================
+-- SNAP Eligibility / Caseload
+-- Grain: County × Reporting Month
+-- ============================================================
+
 CREATE TABLE IF NOT EXISTS SNAP_ELIGIBILITY (
-    "County Name"                     VARCHAR,
-    "Number of Cases"                 INTEGER,
-    "Number of Eligible Individuals"  INTEGER,
-    "Individuals: Ages < 5"           INTEGER,
-    "Individuals: Ages 5 - 17"        INTEGER,
-    "Individuals: Ages 18 - 59"       INTEGER,
-    "Individuals: Ages 60 - 64"       INTEGER,
-    "Individuals: Ages 65 +"          INTEGER,
-    "Total SNAP Payments"             NUMBER(18,2),
-    "Avg Payment / Case"              NUMBER(18,2),
-    report_month                      VARCHAR,
-    source_file                       VARCHAR
+    county_name                 VARCHAR,
+    case_count                  INTEGER,
+    eligible_individual_count   INTEGER,
+    eligible_under_5_count      INTEGER,
+    eligible_5_17_count         INTEGER,
+    eligible_18_59_count        INTEGER,
+    eligible_60_64_count        INTEGER,
+    eligible_65_plus_count      INTEGER,
+    total_snap_payments         NUMBER(18,2),
+    avg_payment_per_case        NUMBER(18,2),
+    report_month                VARCHAR,
+    source_file                 VARCHAR
 );
+
+
+-- ============================================================
+-- SNAP Processing Timeliness
+-- Grain: Region × Reporting Month × Processing Type
+-- ============================================================
 
 CREATE TABLE IF NOT EXISTS SNAP_TIMELINESS (
     processing_type    VARCHAR,

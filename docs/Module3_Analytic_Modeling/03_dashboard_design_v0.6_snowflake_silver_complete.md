@@ -595,15 +595,46 @@ The authoritative County / Region reference should define the canonical
 mapping, with unmatched / ambiguous mappings and the `02/09` reporting
 exception handled explicitly through validation.
 
-### 13.4 Gold Implementation Readiness
+### 13.4 Snowflake Silver Warehouse Implementation
 
-Both source domains have passed the Trusted Silver boundary. The Silver
-dependency that previously blocked Physical Gold has therefore been
-cleared.
+**Status: Complete ✅**
 
-The Gold design package now includes the frozen logical model, final
-physical schema, source-to-target transformation design, and Gold
-acceptance criteria / validation design.
+Both validated Trusted Silver datasets have now been published to the
+Snowflake analytical warehouse under `SNAP_ANALYTICS.SILVER`.
+
+Warehouse tables:
+- `SNAP_ELIGIBILITY`
+- `SNAP_TIMELINESS`
+
+Implementation flow:
+
+`Local Trusted Silver Parquet → Snowflake Internal Stage → COPY INTO → Snowflake SILVER Tables → Reconciliation`
+
+Eligibility warehouse reconciliation passed: **3,048 rows, 254 counties,
+12 reporting months, 2024-01 through 2024-12, no duplicate County × Month
+grain, and no unexpected nulls in required core measures.**
+
+Timeliness warehouse reconciliation passed: **384 rows, 12 reporting
+months, 2 processing types, 2024-01 through 2024-12, and no duplicate
+Region × Reporting Month × Processing Type grain.**
+
+During implementation, Snowflake integration exposed presentation
+whitespace in Eligibility source headers that had propagated into Silver.
+The schema was corrected at the Silver trust boundary and standardized
+to stable `snake_case` names rather than adding a downstream warehouse
+workaround.
+
+Therefore, the warehouse representation of Trusted Silver is now
+**complete and reconciled ✅**.
+
+### 13.5 Gold Implementation Readiness
+
+Both source domains have passed the Trusted Silver validation gate and
+have been successfully loaded and reconciled in Snowflake. The warehouse
+dependency for Physical Gold implementation has therefore been cleared.
+
+**Next active task:** Build the five physical Gold tables in
+`SNAP_ANALYTICS.GOLD` and execute the Gold acceptance criteria.
 
 ## 14. Physical Gold Model Design
 
@@ -1163,18 +1194,25 @@ Key production pattern:
 -   Join-safety rules documented
 -   Gold validation gate designed before implementation
 
+### Warehouse Implementation Progress
+
+- Trusted Silver warehouse representation: **Complete ✅**
+- Eligibility Silver loaded and reconciled in Snowflake: **Complete ✅**
+- Timeliness Silver loaded and reconciled in Snowflake: **Complete ✅**
+- Physical Gold implementation: **Next**
+
 ### Remaining Execution Work
 
-1.  Implement / publish the warehouse representation of Trusted Silver.
-2.  Build `dim_month`, `dim_region`, and `dim_county`.
-3.  Build `fact_snap_processing` and `fact_snap_caseload_monthly`.
-4.  Execute the Step 9 Gold acceptance criteria.
-5.  Publish Trusted Gold only after the validation gate passes.
-6.  Proceed to governed semantic metrics and dashboard consumption.
+1.  Build `dim_month`, `dim_region`, and `dim_county`.
+2.  Build `fact_snap_processing` and `fact_snap_caseload_monthly`.
+3.  Execute the Gold acceptance criteria.
+4.  Publish Trusted Gold only after the validation gate passes.
+5.  Proceed to governed semantic metrics.
+6.  Proceed to BI Environment Health monitoring and dashboard consumption.
 
 ### Execution Path
 
-`Trusted Silver ✅ → Physical Gold Implementation → Gold Validation Gate → Trusted Gold → Semantic Metrics → Dashboard`
+`Trusted Silver ✅ → Snowflake Silver ✅ → Physical Gold Implementation → Gold Validation Gate → Trusted Gold → Semantic Metrics → BI Environment Health → Dashboard`
 
 ### Module 3 Production Mental Model
 

@@ -1,13 +1,35 @@
+-- ============================================================
 -- SNAP Analytics Platform V2
--- Build Gold facts from Trusted Silver using dimension-key lookups.
+-- Build Gold Facts
+--
+-- Purpose:
+--   Build analytics-ready fact tables from Trusted Silver
+--   using governed dimension-key lookups.
+--
+-- Prerequisite:
+--   Gold dimensions must be built and validated first.
+-- ============================================================
 
 USE DATABASE SNAP_ANALYTICS;
 USE SCHEMA GOLD;
 
+
 -- ============================================================
 -- FACT_SNAP_PROCESSING
--- Silver grain = Gold grain:
--- Region x Reporting Month x Processing Type
+--
+-- Business Process:
+--   SNAP Processing Performance
+--
+-- Grain:
+--   One row per Region x Reporting Month x Processing Type
+--
+-- Source:
+--   Trusted Silver SNAP_TIMELINESS
+--
+-- Included reporting units:
+--   01, 02/09, 03, 04, 05, 06, 07, 08, 10, 11
+--
+-- Non-geographic reporting units are excluded.
 -- ============================================================
 
 TRUNCATE TABLE FACT_SNAP_PROCESSING;
@@ -26,15 +48,42 @@ SELECT
     s.disposed_count,
     s.timely_count
 FROM SNAP_ANALYTICS.SILVER.SNAP_TIMELINESS s
-LEFT JOIN DIM_REGION r
-    ON s.region_code = r.region_code
-LEFT JOIN DIM_MONTH m
-    ON s.reporting_month = m.reporting_month;
+
+JOIN DIM_REGION r
+    ON s."Region" = r.region_code
+
+JOIN DIM_MONTH m
+    ON s.reporting_month = m.reporting_month
+
+WHERE s."Region" IN (
+    '01',
+    '02/09',
+    '03',
+    '04',
+    '05',
+    '06',
+    '07',
+    '08',
+    '10',
+    '11'
+);
+
 
 -- ============================================================
 -- FACT_SNAP_CASELOAD_MONTHLY
--- Silver grain = Gold grain:
--- County x Reporting Month
+--
+-- Business Process:
+--   Monthly SNAP Caseload & Benefit Activity
+--
+-- Grain:
+--   One row per County x Reporting Month
+--
+-- Source:
+--   Trusted Silver SNAP_ELIGIBILITY
+--
+-- County identity is resolved through county_name because
+-- county_fips is supplied by the governed County reference,
+-- not by the Eligibility Silver dataset.
 -- ============================================================
 
 TRUNCATE TABLE FACT_SNAP_CASELOAD_MONTHLY;
@@ -63,15 +112,28 @@ SELECT
     s.eligible_65_plus_count,
     s.total_snap_payments
 FROM SNAP_ANALYTICS.SILVER.SNAP_ELIGIBILITY s
-LEFT JOIN DIM_COUNTY c
-    ON s.county_fips = c.county_fips
-LEFT JOIN DIM_MONTH m
-    ON s.reporting_month = m.reporting_month;
 
--- Governed derived metrics should be calculated at query / semantic level:
+JOIN DIM_COUNTY c
+    ON UPPER(TRIM(s.county_name)) = UPPER(TRIM(c.county_name))
+
+JOIN DIM_MONTH m
+    ON s.report_month = m.reporting_month;
+
+
+-- ============================================================
+-- Governed Derived Metrics
+--
+-- Derived metrics are intentionally NOT stored as physical
+-- fact-table columns.
 --
 -- Timeliness Rate:
---   SUM(timely_count) / NULLIF(SUM(disposed_count), 0)
+--   SUM(timely_count)
+--   / NULLIF(SUM(disposed_count), 0)
 --
 -- Average Payment per Case:
---   SUM(total_snap_payments) / NULLIF(SUM(case_count), 0)
+--   SUM(total_snap_payments)
+--   / NULLIF(SUM(case_count), 0)
+--
+-- These definitions are governed downstream in the
+-- Semantic Metric Layer.
+-- ============================================================
