@@ -1,0 +1,94 @@
+version: 2
+
+models:
+  - name: dim_month
+    description: "One row per reporting month from Trusted Silver Eligibility and Timeliness."
+    columns:
+      - name: month_key
+        description: "Month key in YYYYMM format."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: reporting_month
+        description: "Reporting month in YYYY-MM format."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: year
+        description: "Calendar year."
+
+      - name: quarter
+        description: "Calendar quarter: Q1, Q2, Q3, or Q4."
+
+      - name: month_number
+        description: "Calendar month number, from 1 to 12."
+
+      - name: month_name
+        description: "Abbreviated calendar month name."
+
+  - name: dim_region
+    description: >
+      One row per governed region.
+      Includes canonical geographic regions 01–11 and the combined reporting
+      region 02/09, assigned region_key 12.
+      The processing fact uses a subset of 10 reporting regions.
+    columns:
+      - name: region_key
+        description: "Region key; key 12 represents combined reporting region 02/09."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: region_code
+        description: "Governed region code, preserving leading zeros and combined code 02/09."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: region_name
+        description: "Display name for the region."
+
+  - name: fact_snap_processing
+    description: >
+      One row per region × reporting month × processing type.
+      Includes reporting regions 01, 02/09, 03, 04, 05, 06, 07, 08, 10, and 11.
+      Excludes non-geographic units CCC, DATA INT, MEPD, PERFORMANC, ST OFFICE, and VIC.
+      The trusted 2024 population contains 240 rows: 10 regions × 12 months × 2 types.
+      Calculate timeliness as SUM(timely_count) / NULLIF(SUM(disposed_count), 0).
+      Do not average source percentages or lower-grain rates.
+      Applications benchmark is 95%; Redeterminations has no governed benchmark.
+    columns:
+      - name: region_key
+        description: "Reporting region key linked to dim_region."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_key
+
+      - name: month_key
+        description: "Reporting month key linked to dim_month."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_month')
+                field: month_key
+
+      - name: processing_type
+        description: "Processing category: Applications or Redeterminations."
+        data_tests:
+          - not_null
+
+      - name: disposed_count
+        description: "Number of disposed cases; denominator for timeliness rate."
+        data_tests:
+          - not_null
+
+      - name: timely_count
+        description: "Number of cases processed timely; numerator for timeliness rate."
+        data_tests:
+          - not_null
