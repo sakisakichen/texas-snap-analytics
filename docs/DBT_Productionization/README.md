@@ -165,6 +165,26 @@ Working SQL defines transformation logic. dbt adds a repeatable workflow for bui
 
 This extension preserves governed business definitions while making dependencies and validation rules explicit.
 
+
+## Final Validation — October 5, 2026
+
+Row-level reconciliation against Trusted GOLD passed:
+
+| Model | Difference Count |
+|---|---:|
+| FACT_SNAP_PROCESSING | 0 |
+| DIM_MONTH | 0 |
+| DIM_REGION | 0 |
+
+All compared column values and row multiplicities match.
+dbt build and tests passed; documentation and lineage were reviewed.
+The implementation was merged into main.
+
+Status: COMPLETE / CLOSED.
+
+dbt outputs remain in DBT_SAKI. Existing SEMANTIC views continue
+to use Trusted GOLD. Pre-warehouse Python execution remains manua
+
 ## Next Step
 
 Complete reconciliation evidence and repository review, then proceed to **Module 6 — Tableau Dashboard / Decision Experience**.
