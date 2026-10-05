@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: snap_silver
+    database: SNAP_ANALYTICS
+    schema: SILVER
+    tables:
+      - name: snap_timeliness
+        identifier: SNAP_TIMELINESS
+        description: "Trusted Silver SNAP processing timeliness data."
+
+      - name: snap_eligibility
+        identifier: SNAP_ELIGIBILITY
+
+      - name: county_region_reference
+        identifier: COUNTY_REGION_REFERENCE  

@@ -1,0 +1,11 @@
+name: snap_analytics
+version: '1.0.0'
+config-version: 2
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+models:
+  snap_analytics:
+    +materialized: view
