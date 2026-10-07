@@ -29,7 +29,7 @@ The facts are not directly joined. Local extracts support development and demons
 - Region bars show lower Applications timeliness first.
 - The 95% benchmark applies to Applications only. No governed Redeterminations benchmark is applied.
 
-![Processing Overview](screenshots/processing_dashboard_2024.png)
+![Processing Overview](processing_dashboard_2024.png)
 
 ### Caseload Overview
 
@@ -37,7 +37,7 @@ The facts are not directly joined. Local extracts support development and demons
 - A shared County filter keeps all three charts on the same geographic scope.
 - Default County selection: All.
 
-![Caseload Overview](screenshots/caseload_dashboard_2024.png)
+![Caseload Overview](caseload_dashboard_2024.png)
 
 Lines support temporal comparison; sorted bars support ranking. Maps were not selected because the primary questions concern trends and performance comparison rather than spatial clusters or adjacency.
 
