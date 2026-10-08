@@ -41,3 +41,15 @@ CREATE TABLE IF NOT EXISTS SNAP_TIMELINESS (
     reporting_month    VARCHAR,
     source_file        VARCHAR
 );
+
+
+-- ============================================================
+-- County to Region Reference
+-- Grain: One row per Texas county
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS COUNTY_REGION_REFERENCE (
+    COUNTY_NAME VARCHAR,
+    COUNTY_FIPS VARCHAR(5),
+    REGION_CODE VARCHAR(2)
+);
